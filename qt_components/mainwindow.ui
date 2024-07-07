@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>350</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">background-color:rgb(31, 49, 75);
+   background-image:url(:/images/aerospace-village-logo-grey.png);
+  </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">background-color:rgb(0);</string>
+   </property>
+<!--   <layout class="QVBoxLayout" name="verticalLayout">-->
+<!--    <item>-->
+<!--     <widget class="QLabel" name="labelOption1">-->
+<!--      <property name="font">-->
+<!--       <font>-->
+<!--        <family>Neuropol X</family>-->
+<!--       </font>-->
+<!--      </property>-->
+<!--      <property name="styleSheet">-->
+<!--       <string notr="true">background-color:rgb(0);</string>-->
+<!--      </property>-->
+<!--      <property name="text">-->
+<!--       <string>Badge CTF</string>-->
+<!--      </property>-->
+<!--     </widget>-->
+<!--    </item>-->
+<!--    <item>-->
+<!--     <widget class="QLabel" name="labelOption2">-->
+<!--      <property name="font">-->
+<!--       <font>-->
+<!--        <family>Neuropol X</family>-->
+<!--       </font>-->
+<!--      </property>-->
+<!--      <property name="text">-->
+<!--       <string>GPS Monitor</string>-->
+<!--      </property>-->
+<!--     </widget>-->
+<!--    </item>-->
+<!--    <item>-->
+<!--     <widget class="QLabel" name="labelOption3">-->
+<!--      <property name="font">-->
+<!--       <font>-->
+<!--        <family>Neuropol X</family>-->
+<!--       </font>-->
+<!--      </property>-->
+<!--      <property name="text">-->
+<!--       <string>ADS-B Map</string>-->
+<!--      </property>-->
+<!--     </widget>-->
+<!--    </item>-->
+<!--    <item>-->
+<!--     <widget class="QLabel" name="labelOption4">-->
+<!--      <property name="font">-->
+<!--       <font>-->
+<!--        <family>Neuropol X</family>-->
+<!--       </font>-->
+<!--      </property>-->
+<!--      <property name="text">-->
+<!--       <string>Utilities</string>-->
+<!--      </property>-->
+<!--     </widget>-->
+<!--    </item>-->
+<!--    <item>-->
+<!--     <widget class="QLabel" name="labelOption5">-->
+<!--      <property name="font">-->
+<!--       <font>-->
+<!--        <family>Neuropol X</family>-->
+<!--       </font>-->
+<!--      </property>-->
+<!--      <property name="text">-->
+<!--       <string>Settings</string>-->
+<!--      </property>-->
+<!--     </widget>-->
+<!--    </item>-->
+<!--   </layout>-->
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>150</y>
+      <width>91</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Neuropol X</family>
+      <pointsize>8</pointsize>
+     </font>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color:rgb(0);
+      color:rgb(255, 255, 0);</string>
+    </property>
+    <property name="text">
+     <string>Main Menu</string>
+    </property>
+    <property name="textFormat">
+     <enum>Qt::AutoText</enum>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>450</width>
+     <height>24</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

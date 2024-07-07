@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/aerospace-village-logo-450-450.png</file>
+        <file>images/aerospace-village-logo-grey.png</file>
+    </qresource>
+</RCC>
