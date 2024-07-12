@@ -9,7 +9,7 @@ QRotaryMenuEntry::QRotaryMenuEntry(const QString& text, QWidget* parent, QWidget
     this->setText(text);
     this->setAlignment(Qt::AlignLeft);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    this->setStyleSheet("font-size: 16px; color: white;");
+    this->setStyleSheet("font-size: 16px; color: white; background-color:rgb(0);");
     this->installEventFilter(this);
 }
 

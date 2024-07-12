@@ -26,7 +26,7 @@ protected:
 
 private:
     int wrapIndex(int size, int index);
-    void redrawEntries(int lower_index=0, int element_length=5);
+    void redrawEntries(int lower_index, int element_length);
     QList<QRotaryMenuEntry*> entries;
     QString text;
     QString highlight_text;

@@ -37,7 +37,6 @@ MainWindow::MainWindow(QWidget* parent)
     );
 
     this->installEventFilter(rotary_menu);
-    // QRotaryMenuEntry* entry1 = new QRotaryMenuEntry("test text", this, this);
 
 
 
