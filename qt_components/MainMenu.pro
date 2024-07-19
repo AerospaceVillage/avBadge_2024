@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -16,13 +17,36 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AVQtWidgets/clock.cpp \
+    AVQtWidgets/compass.cpp \
+    AVQtWidgets/flightboard.cpp \
+    AVQtWidgets/getdata.cpp \
+    AVQtWidgets/oscope.cpp \
+    AVQtWidgets/qrotarymenu.cpp \
+    AVQtWidgets/qrotarymenuentry.cpp \
+    AVQtWidgets/radarscope.cpp \
+    AVQtWidgets/simplemediaplayer.cpp \
+    AVQtWidgets/splash.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    AVQtWidgets/clock.h \
+    AVQtWidgets/compass.h \
+    AVQtWidgets/flightboard.h \
+    AVQtWidgets/getdata.h \
+    AVQtWidgets/oscope.h \
+    AVQtWidgets/qrotarymenu.h \
+    AVQtWidgets/qrotarymenuentry.h \
+    AVQtWidgets/radarscope.h \
+    AVQtWidgets/simplemediaplayer.h \
+    AVQtWidgets/splash.h \
     mainwindow.h
 
 FORMS += \
+    AVQtWidgets/clock.ui \
+    AVQtWidgets/compass.ui \
+    AVQtWidgets/simplemediaplayer.ui \
     mainwindow.ui
 
 # Default rules for deployment.
@@ -34,4 +58,5 @@ DISTFILES += \
     aerospace-village-logo.png
 
 RESOURCES += \
+    AVQtWidgets/files.qrc \
     resources.qrc
