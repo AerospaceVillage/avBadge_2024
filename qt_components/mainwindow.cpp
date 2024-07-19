@@ -21,15 +21,28 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    setMinimumSize(480,480);
+    // setAttribute(Qt::WA_TranslucentBackground);
+
     ui->setupUi(this);
     getData* getdata = new getData(this);
     getdata->start();
 
     Clock* clockW = new Clock(this);
-    simplemediaplayer* mediaPlayer = new simplemediaplayer(this);
+    compass* compassW = new compass(this);
+    // simplemediaplayer* mediaPlayer = new simplemediaplayer();
+    // splash* splashScreen = new splash();
+    // radarscope* radar = new radarscope();
+
+
+    // connect(radar, SIGNAL(callData()),getdata, SLOT(onReqAirSpace()));
+    // connect(getdata, SIGNAL(givePlane(QList<aircraft>)),radar, SLOT(setTraffic(QList<aircraft>)));
+    // connect(radar, SIGNAL(setPixToMiles(float)),getdata, SLOT(setPtoM(float)));
+    // connect(radar, SIGNAL(getGPS()),getdata, SLOT(giveGPS()));
+    // connect(getdata, SIGNAL(updateGPS(gpsCord)),radar, SLOT(scopeGPS(gpsCord)));
 
     QRotaryMenuEntry* entry1 = new QRotaryMenuEntry("Clock", this, clockW);
-    QRotaryMenuEntry* entry2 = new QRotaryMenuEntry("Video", this, mediaPlayer);
+    QRotaryMenuEntry* entry2 = new QRotaryMenuEntry("Compass", this, compassW);
     QRotaryMenuEntry* entry3 = new QRotaryMenuEntry("Entry 3", this, nullptr);
     QRotaryMenuEntry* entry4 = new QRotaryMenuEntry("Entry 4", this, nullptr);
     QRotaryMenuEntry* entry5 = new QRotaryMenuEntry("Entry 5", this, nullptr);
