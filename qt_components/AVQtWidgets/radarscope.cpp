@@ -371,16 +371,16 @@ QPixmap* radarscope::setMapTile(double zoom, double lat, double lon){
 //    double pixOfImage = 512; // 256 or 512
 
     double correction;
-//    if(pixOfImage == 256){
-//        correction = pow(2,zo-8);
-//    }
-//    if(pixOfImage == 512){
-//        correction = pow(2,zo-9);
-//    }
+    if(pixOfImage == 256){
+        correction = 16;
+    }
+    if(pixOfImage == 512){
+        correction = 272;
+    }
 
-//    double stile = 40075016.686 * (cos(lat)/pow(2,zo));
-//    double spix = stile/256;
-    correction = log(zo)+15;
+
+   double stile = 40075016.686 * (cos(lat)/pow(2,zo));
+   double spix = stile/256;
 
     x_shift = modf(x,&x);
     y_shift = modf(y,&y);
