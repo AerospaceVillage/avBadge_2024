@@ -5,6 +5,14 @@
 #include <QLabel>
 
 #include "AVQtWidgets/qrotarymenu.h"
+#include "AVQtWidgets/clock.h"
+#include "AVQtWidgets/simplemediaplayer.h"
+#include "AVQtWidgets/splash.h"
+#include "AVQtWidgets/compass.h"
+#include "AVQtWidgets/getdata.h"
+#include "AVQtWidgets/radarscope.h"
+#include "AVQtWidgets/flightboard.h"
+#include "AVQtWidgets/oscope.h"
 
 // TODO: Use global to track active window jumps.
 int test;
@@ -14,9 +22,14 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    getData* getdata = new getData(this);
+    getdata->start();
 
-    QRotaryMenuEntry* entry1 = new QRotaryMenuEntry("Entry 1", this, nullptr);
-    QRotaryMenuEntry* entry2 = new QRotaryMenuEntry("Entry 2", this, nullptr);
+    Clock* clockW = new Clock(this);
+    simplemediaplayer* mediaPlayer = new simplemediaplayer(this);
+
+    QRotaryMenuEntry* entry1 = new QRotaryMenuEntry("Clock", this, clockW);
+    QRotaryMenuEntry* entry2 = new QRotaryMenuEntry("Video", this, mediaPlayer);
     QRotaryMenuEntry* entry3 = new QRotaryMenuEntry("Entry 3", this, nullptr);
     QRotaryMenuEntry* entry4 = new QRotaryMenuEntry("Entry 4", this, nullptr);
     QRotaryMenuEntry* entry5 = new QRotaryMenuEntry("Entry 5", this, nullptr);

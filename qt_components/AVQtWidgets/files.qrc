@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/file">
+        <file>assets/alien_tesla.png</file>
+        <file>assets/CompasPath.svg</file>
+        <file>assets/Pokeball.svg</file>
+        <file>assets/volleyball.gif</file>
+        <file>assets/funny1.png</file>
+        <file>assets/funny.png</file>
+        <file>assets/AV_Logo_bad.svg</file>
+    </qresource>
+</RCC>
