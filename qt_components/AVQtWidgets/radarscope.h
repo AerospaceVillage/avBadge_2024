@@ -61,6 +61,7 @@ public:
     bool infoEn = false;
     int cursorX = 240;
     int cursorY = 240;
+    bool viewMap = false;
 
     QList<aircraft> airSpace;
     gpsCord currentGPS;
@@ -109,6 +110,7 @@ signals:
 public slots:
     void scopeGPS(gpsCord localGPS);
     void setTraffic(QList<aircraft>);
+    void changeMap();
 private:
     Ui::radarscope *ui;
 };
