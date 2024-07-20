@@ -19,12 +19,15 @@ public:
         );
     ~QRotaryMenu();
 
+    void set_active_controlled_widget(QWidget* widget);
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     private slots:
         void onEntrySelectionUp();
         void onEntrySelectionDown();
         void onEntrySelectionConfirm();
+        void onQPress();
 
 private:
     int wrapIndex(int size, int index);
@@ -37,6 +40,7 @@ private:
     QWidget* parent;
     int x_offset;
     int y_offset;
+    QWidget* active_controlled_widget;
 };
 
 

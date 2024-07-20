@@ -14,6 +14,8 @@ public:
     void select();
     void set_return_to(QWidget* return_to);
 
+
+
 private:
     QWidget* parent;
     QVector<QWidget*> active_widgets;

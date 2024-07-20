@@ -12,9 +12,6 @@ QClockMenuEntry::QClockMenuEntry(QWidget *parent, const QString &text) : QRotary
 }
 
 QClockMenuEntry::~QClockMenuEntry() {
-    for (int i=0; i<active_widgets.length(); i++) {
-        delete active_widgets[i];
-    }
 }
 
 void QClockMenuEntry::set_return_to(QWidget* return_to) {
@@ -26,7 +23,6 @@ void QClockMenuEntry::select() {
     Clock* clockW = new Clock(this->parent);
     extern QWidget* primary_control;
     primary_control = clockW;
-    active_widgets.append(clockW);
     this->parent->installEventFilter(clockW);
     clockW->set_return_to(this->return_to);
     clockW->show();

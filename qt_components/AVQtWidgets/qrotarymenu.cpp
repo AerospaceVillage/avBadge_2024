@@ -50,34 +50,49 @@ QRotaryMenu::QRotaryMenu(QList<QRotaryMenuEntry*> entries, QWidget *parent, int 
     this->selected_entry_index = 2;
     this->selected_entry = entries[this->selected_entry_index];
     this->selected_entry->setStyleSheet(this->highlight_text);
+
+    this->active_controlled_widget = nullptr;
 }
 
 QRotaryMenu::~QRotaryMenu() {
     // TODO: Should it be the menu's responsibility to destroy the entries?
 }
 
+void QRotaryMenu::set_active_controlled_widget(QWidget *widget) {
+    this->active_controlled_widget = widget;
+}
+
+
 bool QRotaryMenu::eventFilter(QObject *obj, QEvent *event) {
     extern QWidget* primary_control;
-    if (this == primary_control) {
         if (event->type() == QEvent::KeyPress) {
             QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+            if (this == primary_control) {
+                switch (keyEvent->key()) {
+                    case Qt::Key_Up: {
+                        onEntrySelectionUp();
+                        break;
+                    }
+                    case Qt::Key_Down: {
+                        onEntrySelectionDown();
+                        break;
+                    }
+                    case Qt::Key_Return: {
+                        onEntrySelectionConfirm();
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
             switch (keyEvent->key()) {
-                case Qt::Key_Up: {
-                    onEntrySelectionUp();
-                    break;
-                }
-                case Qt::Key_Down: {
-                    onEntrySelectionDown();
-                    break;
-                }
-                case Qt::Key_Return: {
-                    onEntrySelectionConfirm();
+                case Qt::Key_Q: {
+                    onQPress();
                     break;
                 }
                 default:
                     break;
             }
-        }
         return obj->eventFilter(obj, event);
     }
     return false;
@@ -109,4 +124,13 @@ void QRotaryMenu::onEntrySelectionDown() {
 
 void QRotaryMenu::onEntrySelectionConfirm() {
     this->selected_entry->select();
+}
+
+void QRotaryMenu::onQPress() {
+    if (this->active_controlled_widget != nullptr) {
+        delete this->active_controlled_widget;
+        this->active_controlled_widget = nullptr;
+        extern QWidget* primary_control;
+        primary_control = this;
+    }
 }
