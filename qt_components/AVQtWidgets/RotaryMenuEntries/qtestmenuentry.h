@@ -5,7 +5,7 @@
 #include "AVQtWidgets/qrotarymenuentry.h"
 
 
-class QTestMenuEntry: public QRotaryMenuEntry{
+class QTestMenuEntry: public QRotaryMenuEntry {
     Q_OBJECT
 
 public:

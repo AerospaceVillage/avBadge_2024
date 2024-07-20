@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QEvent>
+#include "AVQtWidgets/qrotarymenu.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
