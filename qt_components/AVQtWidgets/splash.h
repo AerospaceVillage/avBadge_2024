@@ -4,9 +4,9 @@
 #include <QPaintEvent>
 #include <QWidget>
 
-//namespace Ui {
-//class splash;
-//}
+namespace Ui {
+class splash;
+}
 
 class splash : public QWidget
 {
@@ -17,7 +17,7 @@ public:
     ~splash();
     void paintEvent(QPaintEvent *pEvent);
 private:
-//    Ui::splash *ui;
+    Ui::splash *ui;
 };
 
 #endif // SPLASH_H

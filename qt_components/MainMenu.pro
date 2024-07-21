@@ -17,6 +17,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    AVQtWidgets/RotaryMenuEntries/qclockmenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qtestmenuentry.cpp \
     AVQtWidgets/clock.cpp \
     AVQtWidgets/compass.cpp \
     AVQtWidgets/flightboard.cpp \
@@ -31,6 +36,11 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qtestmenuentry.h \
     AVQtWidgets/clock.h \
     AVQtWidgets/compass.h \
     AVQtWidgets/flightboard.h \
@@ -47,6 +57,7 @@ FORMS += \
     AVQtWidgets/clock.ui \
     AVQtWidgets/compass.ui \
     AVQtWidgets/simplemediaplayer.ui \
+    AVQtWidgets/splash.ui \
     mainwindow.ui
 
 # Default rules for deployment.

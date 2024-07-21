@@ -17,6 +17,8 @@
 #include "AVQtWidgets/oscope.h"
 #include "AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h"
 #include "AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h"
 
 QWidget* primary_control;
 
@@ -52,8 +54,8 @@ MainWindow::MainWindow(QWidget* parent)
     // Create a menu entry instance. It should know it's parent (in this case the main menu) and the display for the entry.
     QClockMenuEntry* clock_entry = new QClockMenuEntry(this, "Clock");
     QCompassMenuEntry* compass_entry = new QCompassMenuEntry(this, "Compass");
-    QTestMenuEntry* entry3 = new QTestMenuEntry(this, "Entry 3");
-    QTestMenuEntry* entry4 = new QTestMenuEntry(this, "Entry 4");
+    QOscopeMenuEntry* oScope = new QOscopeMenuEntry(this, "OScope");
+    QSplashMenuEntry* splasH = new QSplashMenuEntry(this, "Image");
     QTestMenuEntry* entry5 = new QTestMenuEntry(this, "Entry 5");
     QTestMenuEntry* entry6 = new QTestMenuEntry(this, "Entry 6");
     QTestMenuEntry* entry7 = new QTestMenuEntry(this, "Entry 7");
@@ -61,8 +63,8 @@ MainWindow::MainWindow(QWidget* parent)
     QList<QRotaryMenuEntry*> rotary_menu_entries;
     rotary_menu_entries.append(clock_entry);
     rotary_menu_entries.append(compass_entry);
-    rotary_menu_entries.append(entry3);
-    rotary_menu_entries.append(entry4);
+    rotary_menu_entries.append(oScope);
+    rotary_menu_entries.append(splasH);
     rotary_menu_entries.append(entry5);
     rotary_menu_entries.append(entry6);
     rotary_menu_entries.append(entry7);
