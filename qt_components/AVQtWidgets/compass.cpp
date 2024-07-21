@@ -27,6 +27,7 @@ void compass::paintEvent(QPaintEvent *pEvent)
 {
     QPixmap *pix = new QPixmap(480,480); /// in reality is 480,480
     QPainter *painter = new QPainter(pix);
+    painter->drawRect(0,0,480,480);
 
     // draw backgound first
     QPoint point = QPoint(0,0);
