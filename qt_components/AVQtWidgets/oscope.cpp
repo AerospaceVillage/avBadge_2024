@@ -94,9 +94,7 @@ void oScope::paintEvent(QPaintEvent *pEvent){
         this->painter->drawImage(size,img);
     }
     delete sta;
-    if(this->painter->end()==false){
-        delete this->painter;
-    }
+    delete this->painter;
 }
 
 void oScope::drawSin(QColor color){
