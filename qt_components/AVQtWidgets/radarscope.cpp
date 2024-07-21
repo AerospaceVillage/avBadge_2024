@@ -23,10 +23,10 @@ radarscope::radarscope(QWidget *parent) :
     this->setPalette(pal);
     this->show();
 
-
     QTimer* tir = new QTimer(this);
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&radarscope::sweep_line));
     tir->start(SWEEPINTERVAL);
+
     //// get aircraft structy form getData()
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&radarscope::getAirTraffic));
     // start is base on milliseconds
@@ -53,14 +53,13 @@ void radarscope::paintEvent(QPaintEvent *pEvent)
 
     // constuct painter
     QPainter *painter = new QPainter(this);    //    scene = new QGraphicsScene(this);
-    double z = 14;
-    double latt = 39.1066028076821;
-    double lonn = -94.4862048915343;
+    if (viewMap == true){
+        QPixmap* bgMap  = setMapTile(int(this->pixel_to_miles+8.0)/2, this->currentGPS.lat, this->currentGPS.lon); /// zoom has to be an int cause of the math to get XY
+        qDebug()<< "Pix value: " << int(this->pixel_to_miles+8.0)/2 << "avalue in the system" << int(this->pixel_to_miles+6);
+        painter->drawPixmap(0,0, *bgMap);
+        delete bgMap;
 
-    QPixmap* bgMap  = setMapTile(int(this->pixel_to_miles+6.0), latt, lonn); /// zoom has to be an int cause of the math to get XY
-    qDebug()<< "Pix value: " << this->pixel_to_miles+6.0 << "avalue in the system" << int(this->pixel_to_miles+6);
-    painter->drawPixmap(0,0, *bgMap);
-
+    }
 ////    QBrush bg(BG_COLOR);
 //    this->painter->setBackground(bg);
 
@@ -131,10 +130,8 @@ void radarscope::paintEvent(QPaintEvent *pEvent)
         bold1.setBold(true); // or Fantasy or AnyStyle or Helvetica
         painter->setFont(bold1);
         painter->setPen(QPen(Qt::yellow));
-        painter->drawText(235, 20,QString("i"));
+        painter->drawText(225, 25,QString("ⓘ"));
     }
-
-    delete bgMap;
 
     if(painter->end()==false){
         delete painter;
@@ -305,6 +302,11 @@ void radarscope::wheelEvent(QWheelEvent* event){
     }
 }
 
+void radarscope::changeMap(){
+   viewMap = !viewMap;
+
+}
+
 void radarscope::keyPressEvent( QKeyEvent* event ) {
 //    qDebug() << "info " << b;
     switch ( event->key() ) {
@@ -333,11 +335,11 @@ void radarscope::keyPressEvent( QKeyEvent* event ) {
         update();
         break;
 
-    case Qt::Key_A:
+    case Qt::Key_Return:
         cursorEn = !cursorEn;
         update();
         break;
-    case Qt::Key_S:
+    case Qt::Key_A:
         infoEn = !infoEn;
         update();
         break;

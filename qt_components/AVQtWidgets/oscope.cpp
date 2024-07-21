@@ -86,7 +86,7 @@ void oScope::paintEvent(QPaintEvent *pEvent){
     if (image == true){
         QRect size(90,90,300,300);
 
-        QImage img("/home/defcon/Downloads/FrogFly.png");
+        QImage img(":/file/assets/FrogFly.png");
         this->painter->drawImage(size,img);
     }
     this->painter->end();
@@ -170,12 +170,12 @@ void oScope::moveInX(){
 
 void oScope::wheelEvent(QWheelEvent* event){
     if(event->angleDelta().y() > 0 ){
-        if(this->state >= 0 && this->state < 4){
+        if(this->state < 4){
             this->state += 1;
         }
         update();
     } else if(event->angleDelta().y() < 0){
-        if(this->state > 0 && this->state <= 4){
+        if(this->state > 0){
             this->state -= 1;
         }
         update();
@@ -187,31 +187,31 @@ void oScope::keyPressEvent( QKeyEvent* event ) {
 //    qDebug() << "info " << b;
     switch ( event->key() ) {
     case Qt::Key_Up:
-        if(this->amp >= 10 && this->amp < 200){
+        if(this->amp < 200){
             this->amp += 1;
         }
         update();
         break;
     case Qt::Key_Down:
-        if(this->amp > 10 && this->amp <= 200){
+        if(this->amp > 10){
             this->amp -=1;
         }
         update();
         break;
     case Qt::Key_Right:
-        if(this->fre >= .01 && this->fre < .79){
+        if( this->fre < .79){
             this->fre += .01;
         }
         update();
         break;
     case Qt::Key_Left:
-        if(this->fre > .02 && this->fre <= .8 ){
+        if(this->fre > .02 ){
             this->fre -= .01;
         }
         update();
         break;
 
-    case Qt::Key_F:
+    case Qt::Key_A:
         this->image = !this->image;
         update();
         break;
