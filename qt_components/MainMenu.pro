@@ -19,6 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     AVQtWidgets/RotaryMenuEntries/qclockmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qtestmenuentry.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
 HEADERS += \
     AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qtestmenuentry.h \

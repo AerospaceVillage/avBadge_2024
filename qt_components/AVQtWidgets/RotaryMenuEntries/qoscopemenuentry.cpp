@@ -29,3 +29,4 @@ void QOscopeMenuEntry::select() {
     this->main_window->set_active_controlled_widget(oscope_widget);
     oscope_widget->show();
 }
+
