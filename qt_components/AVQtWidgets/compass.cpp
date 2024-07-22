@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QImage>
 #include <QPainterPath>
+#include <QLabel>
 
 
 compass::compass(QWidget *parent) :
@@ -24,7 +25,10 @@ compass::~compass()
 
 void compass::paintEvent(QPaintEvent *pEvent)
 {
-    QPainter *painter = new QPainter(this);
+    QPixmap *pix = new QPixmap(480,480); /// in reality is 480,480
+    QPainter *painter = new QPainter(pix);
+    painter->setBrush(Qt::black);
+    painter->drawRect(0,0,480,480);
 
     // draw backgound first
     QPoint point = QPoint(0,0);
@@ -84,7 +88,12 @@ void compass::paintEvent(QPaintEvent *pEvent)
     painter->drawPolygon(poly);
     painter->fillPath(path,brush);
     painter->end();
+    ui->label->setPixmap(*pix);
+    ui->label->resize(480,480);
+    ui->label->show();
     delete painter;
+    delete pix;
+
 
 
 
@@ -101,7 +110,7 @@ void compass::keyPressEvent( QKeyEvent* event ) {
         b = double((int(b) - 10)%360);
         update();
         break;
-    case Qt::Key_Q:
+    case Qt::Key_A:
         planePointer = !planePointer;
         update();
         break;

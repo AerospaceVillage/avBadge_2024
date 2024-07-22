@@ -12,17 +12,22 @@ public:
     explicit QRotaryMenu(
         QList<QRotaryMenuEntry*> entries,
         QWidget* parent = nullptr,
+        int x_offset=50,
+        int y_offset=60,
         QString text="font-size: 16px; color: white; background-color:rgb(0);",
         QString highlight_text="font-size: 24px; color: yellow; background-color:rgb(0);"
         );
-    ~QRotaryMenu(); // TODO: Ensure all destructors fire.
+    ~QRotaryMenu();
+
+    void set_active_controlled_widget(QWidget* widget);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
     private slots:
         void onEntrySelectionUp();
         void onEntrySelectionDown();
-
+        void onEntrySelectionConfirm();
+        void onQPress();
 
 private:
     int wrapIndex(int size, int index);
@@ -30,9 +35,12 @@ private:
     QList<QRotaryMenuEntry*> entries;
     QString text;
     QString highlight_text;
-    QRotaryMenuEntry* selected_entry; // TODO: Make this whatever is the first option / default option.
+    QRotaryMenuEntry* selected_entry;
     int selected_entry_index;
     QWidget* parent;
+    int x_offset;
+    int y_offset;
+    QWidget* active_controlled_widget;
 };
 
 

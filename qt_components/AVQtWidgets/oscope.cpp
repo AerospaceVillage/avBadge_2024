@@ -14,11 +14,11 @@ oScope::oScope(QWidget *parent) :
 {
     // ui->setupUi(this);
     this->resize(480, 480);
-    this->setAutoFillBackground(true);
-    QPalette pal = QPalette();
-    pal.setColor(QPalette::Window, BG_COLOR);
-    this->setPalette(pal);
-    this->show();
+//    this->setAutoFillBackground(true);
+//    QPalette pal = ui->widget->palette();
+//    pal.setColor(QPalette::Window, BG_COLOR);
+//    this->setPalette(pal);
+//    this->show();
 
     QTimer* tir = new QTimer();
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&oScope::moveInX));
@@ -33,6 +33,10 @@ oScope::~oScope()
 
 void oScope::paintEvent(QPaintEvent *pEvent){
     this->painter = new QPainter(this);
+    QColor bg(BG_COLOR);
+    this->painter->setBrush(bg);
+    this->painter->drawRect(0,0,480,480);
+
     //// draw Oscillosocpe grid
     QColor grid(255,255,255);
     QPen pen(grid);
@@ -89,7 +93,8 @@ void oScope::paintEvent(QPaintEvent *pEvent){
         QImage img(":/file/assets/FrogFly.png");
         this->painter->drawImage(size,img);
     }
-    this->painter->end();
+    delete sta;
+    delete this->painter;
 }
 
 void oScope::drawSin(QColor color){

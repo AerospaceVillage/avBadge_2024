@@ -13,27 +13,18 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QWidget" name="verticalLayoutWidget">
+  <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>482</width>
-     <height>482</height>
+     <width>480</width>
+     <height>480</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="styleSheet">
-       <string notr="true">color:red;</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-   </layout>
+   <property name="text">
+    <string>TextLabel</string>
+   </property>
   </widget>
  </widget>
  <resources/>

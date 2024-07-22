@@ -3,6 +3,8 @@
 
 #include "AVQtWidgets/qrotarymenuentry.h"
 #include <QLabel>
+#include "AVQtWidgets/qcircularkeyboard.h"
+#include "AVQtWidgets/RotaryMenuEntries/qtestmenuentry.h"
 
 #include "AVQtWidgets/qrotarymenu.h"
 #include "AVQtWidgets/clock.h"
@@ -13,9 +15,14 @@
 #include "AVQtWidgets/radarscope.h"
 #include "AVQtWidgets/flightboard.h"
 #include "AVQtWidgets/oscope.h"
+#include "AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.h"
 
-// TODO: Use global to track active window jumps.
-int test;
+
+QWidget* primary_control;
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -25,46 +32,64 @@ MainWindow::MainWindow(QWidget* parent)
     // setAttribute(Qt::WA_TranslucentBackground);
 
     ui->setupUi(this);
-    getData* getdata = new getData(this);
-    getdata->start();
+//    getData* getdata = new getData(this);
+//    getdata->start();
 
-    Clock* clockW = new Clock(this);
-    compass* compassW = new compass(this);
+    // Clock* clockW = new Clock(this);
+    // compass* compassW = new compass(this);
     // simplemediaplayer* mediaPlayer = new simplemediaplayer();
     // splash* splashScreen = new splash();
     // radarscope* radar = new radarscope();
-
 
     // connect(radar, SIGNAL(callData()),getdata, SLOT(onReqAirSpace()));
     // connect(getdata, SIGNAL(givePlane(QList<aircraft>)),radar, SLOT(setTraffic(QList<aircraft>)));
     // connect(radar, SIGNAL(setPixToMiles(float)),getdata, SLOT(setPtoM(float)));
     // connect(radar, SIGNAL(getGPS()),getdata, SLOT(giveGPS()));
     // connect(getdata, SIGNAL(updateGPS(gpsCord)),radar, SLOT(scopeGPS(gpsCord)));
+    // QList<QChar> characters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    //
+    // QCircularKeyboard* circular_keyboard = new QCircularKeyboard(characters, this);
+    // primary_control = circular_keyboard;
+    // this->installEventFilter(circular_keyboard);
 
-    QRotaryMenuEntry* entry1 = new QRotaryMenuEntry("Clock", this, clockW);
-    QRotaryMenuEntry* entry2 = new QRotaryMenuEntry("Compass", this, compassW);
-    QRotaryMenuEntry* entry3 = new QRotaryMenuEntry("Entry 3", this, nullptr);
-    QRotaryMenuEntry* entry4 = new QRotaryMenuEntry("Entry 4", this, nullptr);
-    QRotaryMenuEntry* entry5 = new QRotaryMenuEntry("Entry 5", this, nullptr);
-    QRotaryMenuEntry* entry6 = new QRotaryMenuEntry("Entry 6", this, nullptr);
-    QRotaryMenuEntry* entry7 = new QRotaryMenuEntry("Entry 7", this, nullptr);
+
+    // Create a menu entry instance. It should know it's parent (in this case the main menu) and the display for the entry.
+    QClockMenuEntry* clock_entry = new QClockMenuEntry(this, "Clock");
+    QCompassMenuEntry* compass_entry = new QCompassMenuEntry(this, "Compass");
+    QOscopeMenuEntry* oScope_entry = new QOscopeMenuEntry(this, "OScope");
+    QSplashMenuEntry* splash_entry = new QSplashMenuEntry(this, "Image");
+    QFlightBoardMenuEntry* flightBoard_entry = new QFlightBoardMenuEntry(this, "Fight Board");
+    QTestMenuEntry* entry6 = new QTestMenuEntry(this, "Entry 6");
+    QTestMenuEntry* entry7 = new QTestMenuEntry(this, "Entry 7");
+    // QRotaryMenu expects this list of the entries, this way is done just for organization.
     QList<QRotaryMenuEntry*> rotary_menu_entries;
-    rotary_menu_entries.append(entry1);
-    rotary_menu_entries.append(entry2);
-    rotary_menu_entries.append(entry3);
-    rotary_menu_entries.append(entry4);
-    rotary_menu_entries.append(entry5);
+    rotary_menu_entries.append(clock_entry);
+    rotary_menu_entries.append(compass_entry);
+    rotary_menu_entries.append(oScope_entry);
+    rotary_menu_entries.append(splash_entry);
+    rotary_menu_entries.append(flightBoard_entry);
     rotary_menu_entries.append(entry6);
     rotary_menu_entries.append(entry7);
 
+
     QRotaryMenu* rotary_menu = new QRotaryMenu(
         rotary_menu_entries,
-        this
-    );
-
+        this,
+        50,
+        60
+        );
+    this->main_rotary_menu = rotary_menu;
+    // primary_control is used to determine if a GUI should action on the key_presses it gets.
+    // GUIs may or may not remain in memory when closed and there may be some necessary global key presses.
+    // This allows for those cases as long as the GUIs implement and use this scheme. Example in QRotaryMenu eventFilter.
+    primary_control = rotary_menu;
+    // Forward event signals to the rotary_menu that are caught by the main window.
     this->installEventFilter(rotary_menu);
 
-
+    // The rotary menu instance is actually what needs to be given control back to, not the main menu.
+    // Using this scheme we just tell the new widget where to return control to if it needs controls, or if not just to tell the rotary menu it's expected to handle it instead.
+    clock_entry->set_return_to(rotary_menu);
+    compass_entry->set_return_to(rotary_menu);
 
     // labels.append(ui->labelOption1); // Example for referencing a label generated by .ui.
 
@@ -74,3 +99,6 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
+void MainWindow::set_active_controlled_widget(QWidget *widget) {
+    this->main_rotary_menu->set_active_controlled_widget(widget);
+}

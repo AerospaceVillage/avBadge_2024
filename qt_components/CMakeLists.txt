@@ -14,6 +14,15 @@ add_executable(MyApp main.cpp mainwindow.cpp resources.qrc
         AVQtWidgets/qrotarymenuentry.cpp
         AVQtWidgets/qrotarymenuentry.h
         AVQtWidgets/qrotarymenu.cpp
-        AVQtWidgets/qrotarymenu.h)
+        AVQtWidgets/qrotarymenu.h
+        AVQtWidgets/RotaryMenuEntries/qtestmenuentry.cpp
+        AVQtWidgets/RotaryMenuEntries/qclockmenuentry.cpp
+        AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h
+        AVQtWidgets/clock.cpp
+        AVQtWidgets/clock.cpp
+        AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.cpp
+        AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h
+        AVQtWidgets/compass.cpp
+)
 
 target_link_libraries(MyApp Qt5::Widgets)

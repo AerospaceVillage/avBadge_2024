@@ -8,14 +8,13 @@ class QRotaryMenuEntry: public QLabel {
     Q_OBJECT
 
 public:
-    explicit QRotaryMenuEntry(const QString& text, QWidget* parent = nullptr, QWidget* widget = nullptr);
-    ~QRotaryMenuEntry(); // TODO: Ensure all destructors fire.
+    explicit QRotaryMenuEntry(QWidget* parent);
+    ~QRotaryMenuEntry();
 
-    void select();
-
+    virtual void select() = 0;
 
 private:
-    QWidget* widget;
+    QWidget* parent;
 };
 
 
