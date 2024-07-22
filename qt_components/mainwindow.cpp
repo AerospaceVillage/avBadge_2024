@@ -17,6 +17,10 @@
 #include "AVQtWidgets/oscope.h"
 #include "AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h"
 #include "AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.h"
+
 
 QWidget* primary_control;
 
@@ -28,8 +32,8 @@ MainWindow::MainWindow(QWidget* parent)
     // setAttribute(Qt::WA_TranslucentBackground);
 
     ui->setupUi(this);
-    // getData* getdata = new getData(this);
-    // getdata->start();
+//    getData* getdata = new getData(this);
+//    getdata->start();
 
     // Clock* clockW = new Clock(this);
     // compass* compassW = new compass(this);
@@ -52,20 +56,22 @@ MainWindow::MainWindow(QWidget* parent)
     // Create a menu entry instance. It should know it's parent (in this case the main menu) and the display for the entry.
     QClockMenuEntry* clock_entry = new QClockMenuEntry(this, "Clock");
     QCompassMenuEntry* compass_entry = new QCompassMenuEntry(this, "Compass");
-    QTestMenuEntry* entry3 = new QTestMenuEntry(this, "Entry 3");
-    QTestMenuEntry* entry4 = new QTestMenuEntry(this, "Entry 4");
-    QTestMenuEntry* entry5 = new QTestMenuEntry(this, "Entry 5");
+    QOscopeMenuEntry* oScope_entry = new QOscopeMenuEntry(this, "OScope");
+    QSplashMenuEntry* splash_entry = new QSplashMenuEntry(this, "Image");
+    QFlightBoardMenuEntry* flightBoard_entry = new QFlightBoardMenuEntry(this, "Fight Board");
     QTestMenuEntry* entry6 = new QTestMenuEntry(this, "Entry 6");
     QTestMenuEntry* entry7 = new QTestMenuEntry(this, "Entry 7");
     // QRotaryMenu expects this list of the entries, this way is done just for organization.
     QList<QRotaryMenuEntry*> rotary_menu_entries;
     rotary_menu_entries.append(clock_entry);
     rotary_menu_entries.append(compass_entry);
-    rotary_menu_entries.append(entry3);
-    rotary_menu_entries.append(entry4);
-    rotary_menu_entries.append(entry5);
+    rotary_menu_entries.append(oScope_entry);
+    rotary_menu_entries.append(splash_entry);
+    rotary_menu_entries.append(flightBoard_entry);
     rotary_menu_entries.append(entry6);
     rotary_menu_entries.append(entry7);
+
+
     QRotaryMenu* rotary_menu = new QRotaryMenu(
         rotary_menu_entries,
         this,

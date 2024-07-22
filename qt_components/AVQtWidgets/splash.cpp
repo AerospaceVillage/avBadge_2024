@@ -1,22 +1,24 @@
 #include "splash.h"
-
+#include "ui_splash.h"
 #include <QPainter>
+#include <QLabel>
 
 splash::splash(QWidget *parent) :
     QWidget(parent)
-//  ,  ui(new Ui::splash)
+  ,  ui(new Ui::splash)
 {
-//    ui->setupUi(this);
+    ui->setupUi(this);
 
 
 }
 
 splash::~splash()
 {
-//    delete ui;
+    delete ui;
 }
 
 void splash::paintEvent(QPaintEvent *pEvent){
+
 
     QPainter *painter = new QPainter(this);
 

@@ -35,7 +35,8 @@ flightBoard::~flightBoard()
 void flightBoard::paintEvent(QPaintEvent *pEvent)
 {
     /// constuct painter
-    QPainter *painter = new QPainter(this);
+    QPixmap *pix = new QPixmap(480,480); /// in reality is 480,480
+    QPainter *painter = new QPainter(pix);
 
     QColor *bg_color = new QColor(0,139,0);
     QBrush *bg = new QBrush(*bg_color);
@@ -114,6 +115,11 @@ void flightBoard::paintEvent(QPaintEvent *pEvent)
     QRect size(5,200,80,80);
     QImage *img = new QImage(":/file/assets/AV_Logo_bad.svg");
     painter->drawImage(size,*img);
+
+    QLabel *label = new QLabel(this);
+    label->setPixmap(*pix);
+    label->resize(480,480);
+    label->show();
 
     delete bg_color;
     delete bg;
