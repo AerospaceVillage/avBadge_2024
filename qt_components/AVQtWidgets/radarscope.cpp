@@ -44,7 +44,7 @@ radarscope::radarscope(QWidget *parent) :
 
 radarscope::~radarscope()
 {
-    delete ui;
+//    delete ui;
 }
 
 /// whenever a update() is called this is executed

@@ -20,6 +20,8 @@
 #include "AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h"
 #include "AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h"
 #include "AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qradarscopemenuentry.h"
+#include "AVQtWidgets/RotaryMenuEntries/qmediaplayermenuentry.h"
 
 
 QWidget* primary_control;
@@ -59,8 +61,8 @@ MainWindow::MainWindow(QWidget* parent)
     QOscopeMenuEntry* oScope_entry = new QOscopeMenuEntry(this, "OScope");
     QSplashMenuEntry* splash_entry = new QSplashMenuEntry(this, "Image");
     QFlightBoardMenuEntry* flightBoard_entry = new QFlightBoardMenuEntry(this, "Fight Board");
-    QTestMenuEntry* entry6 = new QTestMenuEntry(this, "Entry 6");
-    QTestMenuEntry* entry7 = new QTestMenuEntry(this, "Entry 7");
+    QRadarScopeMenuEntry* radarscope_entry = new QRadarScopeMenuEntry(this, "Radar Scope");
+    QMediaPlayerMenuEntry* mediaplayer_entry = new QMediaPlayerMenuEntry(this, "Media Player");
     // QRotaryMenu expects this list of the entries, this way is done just for organization.
     QList<QRotaryMenuEntry*> rotary_menu_entries;
     rotary_menu_entries.append(clock_entry);
@@ -68,8 +70,8 @@ MainWindow::MainWindow(QWidget* parent)
     rotary_menu_entries.append(oScope_entry);
     rotary_menu_entries.append(splash_entry);
     rotary_menu_entries.append(flightBoard_entry);
-    rotary_menu_entries.append(entry6);
-    rotary_menu_entries.append(entry7);
+    rotary_menu_entries.append(radarscope_entry);
+    rotary_menu_entries.append(mediaplayer_entry);
 
 
     QRotaryMenu* rotary_menu = new QRotaryMenu(

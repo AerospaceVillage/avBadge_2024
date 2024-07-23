@@ -20,7 +20,9 @@ SOURCES += \
     AVQtWidgets/RotaryMenuEntries/qclockmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qmediaplayermenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.cpp \
+    AVQtWidgets/RotaryMenuEntries/qradarscopemenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.cpp \
     AVQtWidgets/RotaryMenuEntries/qtestmenuentry.cpp \
     AVQtWidgets/clock.cpp \
@@ -40,7 +42,9 @@ HEADERS += \
     AVQtWidgets/RotaryMenuEntries/qclockmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qcompassmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qflightboardmenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qmediaplayermenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qoscopemenuentry.h \
+    AVQtWidgets/RotaryMenuEntries/qradarscopemenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qsplashmenuentry.h \
     AVQtWidgets/RotaryMenuEntries/qtestmenuentry.h \
     AVQtWidgets/clock.h \
