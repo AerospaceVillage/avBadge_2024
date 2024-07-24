@@ -27,5 +27,6 @@ void QRadarScopeMenuEntry::select() {
     extern QWidget* primary_control;
     primary_control = radarscope_widget;
     this->main_window->set_active_controlled_widget(radarscope_widget);
+    this->main_window->installEventFilter(radarscope_widget);
     radarscope_widget->show();
 }

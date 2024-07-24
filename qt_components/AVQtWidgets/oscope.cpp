@@ -19,7 +19,6 @@ oScope::oScope(QWidget *parent) :
 //    pal.setColor(QPalette::Window, BG_COLOR);
 //    this->setPalette(pal);
 //    this->show();
-
     QTimer* tir = new QTimer();
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&oScope::moveInX));
     tir->start(10);
@@ -173,57 +172,60 @@ void oScope::moveInX(){
     this->x = this->x+1;
 }
 
-void oScope::wheelEvent(QWheelEvent* event){
-    if(event->angleDelta().y() > 0 ){
-        if(this->state >= 0 && this->state < 4){
-            this->state += 1;
+bool oScope::eventFilter(QObject *obj, QEvent *event){
+    if(event->type() == QEvent::Wheel){
+        QWheelEvent *wheelEvent = static_cast<QWheelEvent *>(event);
+        if(wheelEvent->angleDelta().y() > 0 ){
+            if(this->state >= 0 && this->state < 4){
+                this->state += 1;
+            }
+            update();
+        } else if(wheelEvent->angleDelta().y() < 0){
+            if(this->state > 0 && this->state <= 4){
+                this->state -= 1;
+            }
+            update();
         }
-        update();
-    } else if(event->angleDelta().y() < 0){
-        if(this->state > 0 && this->state <= 4){
-            this->state -= 1;
-        }
-        update();
     }
-//    qDebug() << " value changet to " << this->fre;
+    if(event->type() == QEvent::KeyPress){
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        switch ( keyEvent->key() ) {
+        case Qt::Key_Up:
+            if(this->amp >= 10 && this->amp < 200){
+                this->amp += 1;
+            }
+            update();
+            break;
+        case Qt::Key_Down:
+            if(this->amp > 10 && this->amp <= 200){
+                this->amp -=1;
+            }
+            update();
+            break;
+        case Qt::Key_Right:
+            if(this->fre >= .01 && this->fre < .79){
+                this->fre += .01;
+            }
+            update();
+            break;
+        case Qt::Key_Left:
+            if(this->fre > .02 && this->fre <= .8 ){
+                this->fre -= .01;
+            }
+            update();
+            break;
+
+        case Qt::Key_A:
+            this->image = !this->image;
+            update();
+            break;
+        default:
+            keyEvent->ignore();
+            break;
+        };
+
+    }
+    return QObject::eventFilter(obj, event);
+
 }
 
-void oScope::keyPressEvent( QKeyEvent* event ) {
-//    qDebug() << "info " << b;
-    switch ( event->key() ) {
-    case Qt::Key_Up:
-        if(this->amp >= 10 && this->amp < 200){
-            this->amp += 1;
-        }
-        update();
-        break;
-    case Qt::Key_Down:
-        if(this->amp > 10 && this->amp <= 200){
-            this->amp -=1;
-        }
-        update();
-        break;
-    case Qt::Key_Right:
-        if(this->fre >= .01 && this->fre < .79){
-            this->fre += .01;
-        }
-        update();
-        break;
-    case Qt::Key_Left:
-        if(this->fre > .02 && this->fre <= .8 ){
-            this->fre -= .01;
-        }
-        update();
-        break;
-
-    case Qt::Key_A:
-        this->image = !this->image;
-        update();
-        break;
-    default:
-        event->ignore();
-        break;
-    }
-   ;
-
-}

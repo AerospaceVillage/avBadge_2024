@@ -62,6 +62,7 @@ HEADERS += \
 FORMS += \
     AVQtWidgets/clock.ui \
     AVQtWidgets/compass.ui \
+    AVQtWidgets/radarscope.ui \
     AVQtWidgets/simplemediaplayer.ui \
     AVQtWidgets/splash.ui \
     mainwindow.ui

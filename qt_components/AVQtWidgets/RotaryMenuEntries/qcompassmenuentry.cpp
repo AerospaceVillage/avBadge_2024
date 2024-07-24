@@ -27,5 +27,6 @@ void QCompassMenuEntry::select() {
     extern QWidget* primary_control;
     primary_control = compass_widget;
     this->main_window->set_active_controlled_widget(compass_widget);
+    this->main_window->installEventFilter(compass_widget);
     compass_widget->show();
 }

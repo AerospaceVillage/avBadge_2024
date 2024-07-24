@@ -99,42 +99,42 @@ void compass::paintEvent(QPaintEvent *pEvent)
 
 }
 
-void compass::keyPressEvent( QKeyEvent* event ) {
-//    qDebug() << "info " << b;
-    switch ( event->key() ) {
-    case Qt::Key_Up:
-        b = double((int(b) + 10)%360);
-        update();
-        break;
-    case Qt::Key_Down:
-        b = double((int(b) - 10)%360);
-        update();
-        break;
-    case Qt::Key_A:
-        planePointer = !planePointer;
-        update();
-        break;
-    case Qt::Key_M:
 
-        break;
-    default:
-        event->ignore();
-        break;
+bool compass::eventFilter(QObject *obj, QEvent *event)
+{
+    if(event->type() == QEvent::Wheel){
+        QWheelEvent *wheelEvent = static_cast<QWheelEvent *>(event);
+            if(wheelEvent->angleDelta().y() > 0){
+                b = double((int(b) + 10)%360);
+                update();
+            } else if(wheelEvent->angleDelta().y() < 0){
+                b = double((int(b) - 10)%360);
+                update();
+            }
     }
-   ;
+    if(event->type() == QEvent::KeyPress){
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        switch ( keyEvent->key() ) {
+        case Qt::Key_Up:
+            b = double((int(b) + 10)%360);
+            update();
+            break;
+        case Qt::Key_Down:
+            b = double((int(b) - 10)%360);
+            update();
+            break;
+        case Qt::Key_A:
+            planePointer = !planePointer;
+            update();
+            break;
+        case Qt::Key_M:
 
-}
-
-void compass::wheelEvent(QWheelEvent* event){
-    if(event->angleDelta().y() > 0){
-        b = double((int(b) + 10)%360);
-        update();
-    } else if(event->angleDelta().y() < 0){
-        b = double((int(b) - 10)%360);
-        update();
+            break;
+        default:
+            event->ignore();
+            break;
+        };
     }
-}
-
-void compass::rotate(){
+    return QObject::eventFilter(obj, event);
 
 }

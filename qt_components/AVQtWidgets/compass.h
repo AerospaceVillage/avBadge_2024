@@ -23,11 +23,12 @@ public:
     ~compass();
 
     bool planePointer = false;
-    virtual void paintEvent(QPaintEvent *pEvent);
-    void keyPressEvent(QKeyEvent *event);
+    void paintEvent(QPaintEvent *pEvent);
     void rotate();
     double b;
-    void wheelEvent(QWheelEvent* event);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
 
 
 protected:
