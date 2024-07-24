@@ -102,7 +102,7 @@ public:
     int getClosesPlane(int x, int y);
 
     QPixmap* setMapTile(double zoom, double lat, double lon);
-    void changeMap();
+
 signals:
     void callData();
     void getLastPlane();
