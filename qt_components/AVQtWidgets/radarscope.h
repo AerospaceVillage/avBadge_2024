@@ -13,6 +13,7 @@
 #include <map>
 #include <unordered_map>
 #include <QList>
+#include <map>
 
 #define maxZoom 40
 #define minZoom 1
@@ -23,7 +24,7 @@
 #define AIRCRAFT_SIZE 3  // In Pixels
 #define AIRCRAFT_OFFSET 1 // In Pixels, want to offset this amount to render the aircaft center. If AIRCRAFT_SIZE == 1 then offset would = 0, otherwise half rounded down
 
-#define LOCATION_FILE "/home/defcon/test23/test2"
+#define LOCATION_FILE "/home/defcon/Downloads/soutmaps2"
 
 
 namespace Ui {
@@ -54,7 +55,10 @@ public:
     int line_y = -920;
     double angle = 0;
 
+    std::map<int,int> mapValue = {{7,1.315898609975},{8,2.631814435417},{9,5.263628870835},{10,10.527257741670},{11,21.054515483339},{12,42.108480075355},{13,84.219163744832}};
+    int mapLevel = 7;
     int matchIndex = 0;
+
 
     /// cursor setup
     bool cursorEn = false;
@@ -62,7 +66,6 @@ public:
     int cursorX = 240;
     int cursorY = 240;
     bool viewMap = false;
-
     QList<aircraft> airSpace;
     gpsCord currentGPS;
 
@@ -91,16 +94,15 @@ public:
     void drawPlane(QPainter *paint, float distance, float bearing, int aircraft_index, int infoIndex);
 
     void erasePlane(int x, int y);
-    void wheelEvent(QWheelEvent *event);
     void drawCirle(QPainter *paint, int val);
 
     void getAirTraffic();
     void getPixToMiles();
 
-    void keyPressEvent(QKeyEvent *event);
     int getClosesPlane(int x, int y);
 
     QPixmap* setMapTile(double zoom, double lat, double lon);
+    void changeMap();
 signals:
     void callData();
     void getLastPlane();
@@ -111,6 +113,11 @@ public slots:
     void scopeGPS(gpsCord localGPS);
     void setTraffic(QList<aircraft>);
     void changeMap();
+    
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+
 private:
     Ui::radarscope *ui;
 };

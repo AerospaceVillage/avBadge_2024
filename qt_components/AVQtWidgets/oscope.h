@@ -31,12 +31,14 @@ public:
     void paintEvent(QPaintEvent *pEvent);
     void moveInX();
     void drawSin(QColor color);
-    void wheelEvent(QWheelEvent *event);
     void drawAnalogSquare(QColor color);
     void drawDigitalSquare(QColor color);
     void drawDigitalTriangle(QColor color);
     void drawDigitalSawtooth(QColor color);
-    void keyPressEvent(QKeyEvent *event);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
+
 private:
     // Ui::oScope *ui;
 };

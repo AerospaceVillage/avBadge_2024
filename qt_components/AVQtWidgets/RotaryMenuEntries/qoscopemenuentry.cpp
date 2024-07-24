@@ -27,6 +27,7 @@ void QOscopeMenuEntry::select() {
     extern QWidget* primary_control;
     primary_control = oscope_widget;
     this->main_window->set_active_controlled_widget(oscope_widget);
+    this->main_window->installEventFilter(oscope_widget);
     oscope_widget->show();
 }
 

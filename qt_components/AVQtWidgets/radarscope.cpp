@@ -1,5 +1,5 @@
 #include "radarscope.h"
-//#include "ui_radarscope.h"
+#include "ui_radarscope.h"
 #include "mainwindow.h"
 #include <QPaintEvent>
 #include <QGraphicsView>
@@ -8,23 +8,24 @@
 #include <QtDebug>
 #include <QTimer>
 #include <QImageReader>
-
-
+#include <QStandardPaths>
 
 radarscope::radarscope(QWidget *parent) :
     QWidget(parent)
-//  ,  ui(new Ui::radarscope)
+  ,  ui(new Ui::radarscope)
 {
-//    ui->setupUi(this);
-    this->resize(480, 480);
-    this->setAutoFillBackground(true);
-    QPalette pal = QPalette();
-    pal.setColor(QPalette::Window, BG_COLOR);
-    this->setPalette(pal);
-    this->show();
+
+    ui->setupUi(this);
+//    this->resize(480, 480);
+//    this->setAutoFillBackground(true);
+//    QPalette pal = QPalette();
+//    pal.setColor(QPalette::Window, BG_COLOR);
+//    this->setPalette(pal);
+//    this->show();
 
     QTimer* tir = new QTimer(this);
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&radarscope::sweep_line));
+
     tir->start(SWEEPINTERVAL);
 
     //// get aircraft structy form getData()
@@ -54,42 +55,46 @@ void radarscope::paintEvent(QPaintEvent *pEvent)
     // constuct painter
     QPainter *painter = new QPainter(this);    //    scene = new QGraphicsScene(this);
     if (viewMap == true){
-        QPixmap* bgMap  = setMapTile(int(this->pixel_to_miles+8.0)/2, this->currentGPS.lat, this->currentGPS.lon); /// zoom has to be an int cause of the math to get XY
-        qDebug()<< "Pix value: " << int(this->pixel_to_miles+8.0)/2 << "avalue in the system" << int(this->pixel_to_miles+6);
+        QPixmap* bgMap  = setMapTile(this->mapLevel, this->currentGPS.lat, this->currentGPS.lon); /// zoom has to be an int cause of the math to get XY
+        qDebug()<< "Pix value: " << this->mapLevel << "avalue in the system" << int(this->pixel_to_miles+6);
+
+
         painter->drawPixmap(0,0, *bgMap);
         delete bgMap;
 
     }
-////    QBrush bg(BG_COLOR);
-//    this->painter->setBackground(bg);
+    QBrush *bg = new QBrush(BG_COLOR);
+    painter->setBrush(*bg);
 
-    QRect rect(0,0,480,480);
     painter->drawRect(0,0,480,480);
+    delete bg;
 
     QFont bold("Helvetica", 10); // or Fantasy or AnyStyle or Helvetica
     painter->setFont(bold);
 
-    //Draw the sweeping line, the rings and the text labels
-    QPen pen(SCOPE_LINES_COLOR);
-    pen.setWidth(2);
-    painter->setPen(pen);
-    QLine rotLine(240,240,this->line_x,this->line_y);
-    painter->drawLine(rotLine);
+    if (viewMap == false){
 
-    // set up the rings for area
-    for(int x : this->ring_ranges_miles) {
-        drawCirle(painter,x);
-    }
-    if(this->pixel_to_miles >= 15){
-        drawCirle(painter,5);
-    }
-    if(this->pixel_to_miles <= 5){
-        drawCirle(painter,100);
-    }
-    if(this->pixel_to_miles <= 3){
-        drawCirle(painter,150);
-    }
+        //Draw the sweeping line, the rings and the text labels
+        QPen pen(SCOPE_LINES_COLOR);
+        pen.setWidth(2);
+        painter->setPen(pen);
+        QLine rotLine(240,240,this->line_x,this->line_y);
+        painter->drawLine(rotLine);
 
+        // set up the rings for area
+        for(int x : this->ring_ranges_miles) {
+            drawCirle(painter,x);
+        }
+        if(this->pixel_to_miles >= 15){
+            drawCirle(painter,5);
+        }
+        if(this->pixel_to_miles <= 5){
+            drawCirle(painter,100);
+        }
+        if(this->pixel_to_miles <= 3){
+            drawCirle(painter,150);
+        }
+    }
 
     // draw Plane in the painting x, y, color
     for (int i = 0; i < airSpace.size(); i++){
@@ -230,7 +235,7 @@ void radarscope::drawPlane(QPainter *paint, float distance, float bearing, int a
             }
             QString distance = QString::number(this->airSpace[aircraft_index].distance, 'f', 2) + "nm";
             paint->drawText(tmp.x-40, tmp.y-20, distance);
-        }        
+        }
     }
 }
 
@@ -286,72 +291,101 @@ void radarscope::setGPS(){
 }
 
 
-void radarscope::wheelEvent(QWheelEvent* event){
-    if(event->angleDelta().y() > 0 ){
-        if(this->pixel_to_miles +1.0 < maxZoom){
-            this->pixel_to_miles += 1.0f;
-            getPixToMiles();
+bool radarscope::eventFilter(QObject *obj, QEvent *event)
+{
+    if(event->type() == QEvent::Wheel){
+        QWheelEvent *wheelEvent = static_cast<QWheelEvent *>(event);
+        if (this->viewMap == false){
+            if(wheelEvent->angleDelta().y() > 0 ){
+                if(this->pixel_to_miles +1.0 < maxZoom){
+                    this->pixel_to_miles += 1.0f;
+                    getPixToMiles();
+                }
+                update();
+            } else if(wheelEvent->angleDelta().y() < 0){
+                if(this->pixel_to_miles -1.0 > minZoom){
+                    this->pixel_to_miles -= 1.0f;
+                    getPixToMiles();
+                }
+                update();
+            }
+        }else {
+            if(wheelEvent->angleDelta().y() > 0 ){
+                if(this->mapLevel < 13 ){
+                    this->mapLevel += 1;
+                    this->pixel_to_miles = mapValue[mapLevel];
+                    getPixToMiles();
+                }
+                update();
+            } else if(wheelEvent->angleDelta().y() < 0){
+                if(this->mapLevel  > 7){
+                    this->mapLevel -= 1 ;
+                    this->pixel_to_miles = mapValue[mapLevel];
+                    getPixToMiles();
+                }
+                update();
+            }
         }
-        update();
-    } else if(event->angleDelta().y() < 0){
-        if(this->pixel_to_miles -1.0 > minZoom){
-            this->pixel_to_miles -= 1.0f;
-            getPixToMiles();
-        }
-        update();
     }
+    if(event->type() == QEvent::KeyPress){
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        switch ( keyEvent->key() ) {
+        case Qt::Key_Up:
+            if(this->cursorY > 50 && this->cursorY <= 430){
+                this->cursorY -= 5;
+            }
+            update();
+            break;
+        case Qt::Key_Down:
+            if(this->cursorY >= 50 && this->cursorY < 430){
+                this->cursorY +=5;
+            }
+            update();
+            break;
+        case Qt::Key_Right:
+            if(this->cursorX >= 50 && this->cursorX < 430){
+                this->cursorX += 5;
+            }
+            update();
+            break;
+        case Qt::Key_Left:
+            if(this->cursorX > 50 && this->cursorX <= 430 ){
+                this->cursorX -= 5;
+            }
+            update();
+            break;
+
+        case Qt::Key_Return:
+            cursorEn = !cursorEn;
+            update();
+            break;
+        case Qt::Key_A:
+            infoEn = !infoEn;
+            update();
+            break;
+        case Qt::Key_S:
+            changeMap();
+            if (this->viewMap == false){
+                this->pixel_to_miles = (480.0 / (max_rannge_miles * 2));
+            } else {
+                this->pixel_to_miles = mapValue[mapLevel];
+            }
+            getPixToMiles();
+            update();
+            break;
+        case Qt::Key_I:
+            RENDER_AIRPLANE_IMAGE = !RENDER_AIRPLANE_IMAGE;
+            break;
+        default:
+            event->ignore();
+            break;
+        };
+    }
+    return QObject::eventFilter(obj, event);
 }
 
 void radarscope::changeMap(){
    viewMap = !viewMap;
-
-}
-
-void radarscope::keyPressEvent( QKeyEvent* event ) {
-//    qDebug() << "info " << b;
-    switch ( event->key() ) {
-    case Qt::Key_Up:
-        if(this->cursorY > 50 && this->cursorY <= 430){
-            this->cursorY -= 5;
-        }
-        update();
-        break;
-    case Qt::Key_Down:
-        if(this->cursorY >= 50 && this->cursorY < 430){
-            this->cursorY +=5;
-        }
-        update();
-        break;
-    case Qt::Key_Right:
-        if(this->cursorX >= 50 && this->cursorX < 430){
-            this->cursorX += 5;
-        }
-        update();
-        break;
-    case Qt::Key_Left:
-        if(this->cursorX > 50 && this->cursorX <= 430 ){
-            this->cursorX -= 5;
-        }
-        update();
-        break;
-
-    case Qt::Key_Return:
-        cursorEn = !cursorEn;
-        update();
-        break;
-    case Qt::Key_A:
-        infoEn = !infoEn;
-        update();
-        break;
-    case Qt::Key_I:
-        RENDER_AIRPLANE_IMAGE = !RENDER_AIRPLANE_IMAGE;
-        break;
-    default:
-        event->ignore();
-        break;
-    }
-   ;
-
 }
 
 
@@ -403,8 +437,12 @@ QPixmap* radarscope::setMapTile(double zoom, double lat, double lon){
     QString *fileBotCen = new QString(QString(LOCATION_FILE)+QStringLiteral("/%1/%2/%3.pbf").arg(zo).arg(x).arg(y+1)); // y+1
     QString *fileBotRight = new QString(QString(LOCATION_FILE)+QStringLiteral("/%1/%2/%3.pbf").arg(zo).arg(x+1).arg(y+1)); // x+1 y+1
 
-    qDebug() << QString(LOCATION_FILE)+QStringLiteral("/%1/%2/%3.pbf").arg(zo).arg(x).arg(y);
+//    qDebug() << QString(LOCATION_FILE)+QStringLiteral("/%1/%2/%3.pbf").arg(zo).arg(x).arg(y);
+//    qDebug() << "path Locaiton" << QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
+
     QString zoomLength = QString::number(zo); // Set the appropriate zoom level
+
+
 
     QImage *rawTopLeft = new QImage(*fileTopLeft,zoomLength.toLatin1());
     QImage *rawTopCen = new QImage(*fileTopCen,zoomLength.toLatin1());
@@ -418,36 +456,6 @@ QPixmap* radarscope::setMapTile(double zoom, double lat, double lon){
     QImage *rawBotCen = new QImage(*fileBotCen,zoomLength.toLatin1());
     QImage *rawBotRight = new QImage(*fileBotRight,zoomLength.toLatin1());
 
-
-//    QImage rawTopLeft;
-//    QImageReader reaDer1(fileTopLeft,zoomLength.toLatin1());
-//    reaDer1.read(&rawTopLeft);
-//    QImage rawTopCen;
-//    QImageReader reaDer2(fileTopCen,zoomLength.toLatin1());
-//    reaDer2.read(&rawTopCen);
-//    QImage rawTopRight;
-//    QImageReader reaDer3(fileTopRight,zoomLength.toLatin1());
-//    reaDer3.read(&rawTopRight);
-
-//    QImage rawCenLeft;
-//    QImageReader reaDer4(fileCenLeft,zoomLength.toLatin1());
-//    reaDer4.read(&rawCenLeft);
-//    QImage rawCenCen;
-//    QImageReader reaDer5(fileCenCen,zoomLength.toLatin1());
-//    reaDer5.read(&rawCenCen);
-//    QImage rawCenRight;
-//    QImageReader reaDer6(fileTopRight,zoomLength.toLatin1());
-//    reaDer6.read(&rawCenRight);
-
-//    QImage rawBotLeft;
-//    QImageReader reaDer7(fileBotLeft,zoomLength.toLatin1());
-//    reaDer7.read(&rawBotLeft);
-//    QImage rawBotCen;
-//    QImageReader reaDer8(fileBotCen,zoomLength.toLatin1());
-//    reaDer8.read(&rawBotCen);
-//    QImage rawBotRight;
-//    QImageReader reaDer9(fileBotRight,zoomLength.toLatin1());
-//    reaDer9.read(&rawBotRight);
 
     int wid = pixOfImage;
     int hgt = wid;
