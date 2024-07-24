@@ -14,6 +14,7 @@ radarscope::radarscope(QWidget *parent) :
     QWidget(parent)
   ,  ui(new Ui::radarscope)
 {
+
     ui->setupUi(this);
 //    this->resize(480, 480);
 //    this->setAutoFillBackground(true);
@@ -21,10 +22,12 @@ radarscope::radarscope(QWidget *parent) :
 //    pal.setColor(QPalette::Window, BG_COLOR);
 //    this->setPalette(pal);
 //    this->show();
+
     QTimer* tir = new QTimer(this);
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&radarscope::sweep_line));
 
     tir->start(SWEEPINTERVAL);
+
     //// get aircraft structy form getData()
     connect(tir, &QTimer::timeout, this, QOverload<>::of(&radarscope::getAirTraffic));
     // start is base on milliseconds
@@ -54,12 +57,15 @@ void radarscope::paintEvent(QPaintEvent *pEvent)
     if (viewMap == true){
         QPixmap* bgMap  = setMapTile(this->mapLevel, this->currentGPS.lat, this->currentGPS.lon); /// zoom has to be an int cause of the math to get XY
         qDebug()<< "Pix value: " << this->mapLevel << "avalue in the system" << int(this->pixel_to_miles+6);
+
+
         painter->drawPixmap(0,0, *bgMap);
         delete bgMap;
 
     }
     QBrush *bg = new QBrush(BG_COLOR);
     painter->setBrush(*bg);
+
     painter->drawRect(0,0,480,480);
     delete bg;
 
@@ -378,11 +384,8 @@ bool radarscope::eventFilter(QObject *obj, QEvent *event)
     return QObject::eventFilter(obj, event);
 }
 
-
-
 void radarscope::changeMap(){
    viewMap = !viewMap;
-
 }
 
 

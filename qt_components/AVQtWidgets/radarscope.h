@@ -112,6 +112,8 @@ signals:
 public slots:
     void scopeGPS(gpsCord localGPS);
     void setTraffic(QList<aircraft>);
+    void changeMap();
+    
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);

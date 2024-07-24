@@ -89,7 +89,7 @@ void oScope::paintEvent(QPaintEvent *pEvent){
     if (image == true){
         QRect size(90,90,300,300);
 
-        QImage img("/home/defcon/Downloads/FrogFly.png");
+        QImage img(":/file/assets/FrogFly.png");
         this->painter->drawImage(size,img);
     }
     delete sta;
@@ -185,6 +185,7 @@ bool oScope::eventFilter(QObject *obj, QEvent *event){
                 this->state -= 1;
             }
             update();
+
         }
     }
     if(event->type() == QEvent::KeyPress){
@@ -223,7 +224,6 @@ bool oScope::eventFilter(QObject *obj, QEvent *event){
             keyEvent->ignore();
             break;
         };
-
     }
     return QObject::eventFilter(obj, event);
 
