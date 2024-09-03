@@ -204,7 +204,7 @@ Plug In board to USB-C and Hold the B button should say USB Recovery Mode on the
 Now in the RPI Installer Select the winglet-os.img.gz file and flash it to the USB device\
 For Device:No Filter\
 For OS: Use Custom (select the winglet-os.img.gz)\
-Select Flash\
+Select Next\
 **OR**\
 Etcher https://etcher.balena.io/ \
 Select Device\
