@@ -1,0 +1,41 @@
+choice
+	prompt "SPL Image Type"
+	default SPL_IMAGE_TYPE_SUNXI_EGON
+
+config SPL_IMAGE_TYPE_SUNXI_EGON
+	bool "eGON (normal)"
+	help
+	  Select this option to embed the SPL binary in an eGON.BT0 image,
+	  which is compatible with the normal boot ROM (NBROM).
+
+	  This is usually the correct option to choose.
+
+config SPL_IMAGE_TYPE_SUNXI_TOC0
+	bool "TOC0 (secure)"
+	help
+	  Select this option to embed the SPL binary in a TOC0 image,
+	  which is compatible with the secure boot ROM (SBROM).
+
+endchoice
+
+config SUNXI_USES_WINGLET_SERIAL
+	bool "Use Winglet Model/Serial Encoding"
+	depends on MACH_SUN8I_R528
+	select SPL_BOARD_INIT
+	help
+	  Set this to use the Winglet serial number encoding scheme,
+	  where the board model/serial is encoded into the SID bank.
+
+config SUNXI_WINGLET_MODEL_NAME_OFFSET
+	int "Model Name offset in Device Tree Name String"
+	depends on SUNXI_USES_WINGLET_SERIAL
+	default 0
+	help
+	  The offset into the device tree name string that the '-model-' is
+	  expected to be. This is how the model name, and thus model number
+	  will be determined in SPL boot when verifying the correct board.
+
+config SPL_IMAGE_TYPE
+	string
+	default "sunxi_egon" if SPL_IMAGE_TYPE_SUNXI_EGON
+	default "sunxi_toc0" if SPL_IMAGE_TYPE_SUNXI_TOC0

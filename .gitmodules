@@ -1,0 +1,3 @@
+[submodule "software/winglet-os/buildroot"]
+	path = software/winglet-os/buildroot
+	url = git://git.buildroot.net/buildroot

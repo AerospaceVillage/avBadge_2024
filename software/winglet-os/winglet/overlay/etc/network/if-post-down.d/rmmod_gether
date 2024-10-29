@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if ! [ "$IFACE" = "usb0" ]; then
+    # Not our interface, quit
+    exit 0
+fi
+
+# No longer need usb ethernet gadget up
+rmmod g_ether

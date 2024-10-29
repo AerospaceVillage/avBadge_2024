@@ -1,0 +1,5 @@
+menu "Winglet Packages"
+	source "$BR2_EXTERNAL_WINGLET_OS_PATH/package/winglet-gui/Config.in"
+	source "$BR2_EXTERNAL_WINGLET_OS_PATH/package/qtpbfimageplugin/Config.in"
+	source "$BR2_EXTERNAL_WINGLET_OS_PATH/package/dump1090-winglet/Config.in"
+endmenu

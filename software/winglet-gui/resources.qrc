@@ -1,0 +1,67 @@
+<RCC>
+    <qresource prefix="/fonts">
+        <file alias="sofachrome.ttf">assets/fonts/sofachrome rg.ttf</file>
+        <file alias="neuropol-x.ttf">assets/fonts/neuropol x rg.ttf</file>
+        <file alias="lato.ttf">assets/fonts/Lato-Regular.ttf</file>
+        <file alias="lato-bold.ttf">assets/fonts/Lato-Bold.ttf</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file alias="av_logo.png">assets/av_logo.png</file>
+        <file alias="dev_ring.png">assets/dev_ring.png</file>
+        <file alias="CompasPath.svg">assets/CompasPath.svg</file>
+        <file alias="FrogFly.png">assets/FrogFly.png</file>
+        <file alias="alien_tesla.png">assets/alien_tesla.png</file>
+    </qresource>
+    <qresource prefix="/icons/wifi">
+        <file alias="conn_0bar.png">assets/icons/wifi/conn_0bar.png</file>
+        <file alias="conn_1bar.png">assets/icons/wifi/conn_1bar.png</file>
+        <file alias="conn_2bar.png">assets/icons/wifi/conn_2bar.png</file>
+        <file alias="conn_3bar.png">assets/icons/wifi/conn_3bar.png</file>
+        <file alias="conn_4bar.png">assets/icons/wifi/conn_4bar.png</file>
+        <file alias="connecting.png">assets/icons/wifi/connecting.png</file>
+        <file alias="disconnected.png">assets/icons/wifi/disconnected.png</file>
+        <file alias="off.png">assets/icons/wifi/off.png</file>
+    </qresource>
+    <qresource prefix="/icons/batt">
+        <file alias="chg_0bar.png">assets/icons/batt/chg_0bar.png</file>
+        <file alias="chg_1bar.png">assets/icons/batt/chg_1bar.png</file>
+        <file alias="chg_2bar.png">assets/icons/batt/chg_2bar.png</file>
+        <file alias="chg_3bar.png">assets/icons/batt/chg_3bar.png</file>
+        <file alias="chg_4bar.png">assets/icons/batt/chg_4bar.png</file>
+        <file alias="chg_5bar.png">assets/icons/batt/chg_5bar.png</file>
+        <file alias="chg_6bar.png">assets/icons/batt/chg_6bar.png</file>
+        <file alias="chg_full.png">assets/icons/batt/chg_full.png</file>
+        <file alias="dsg_0bar.png">assets/icons/batt/dsg_0bar.png</file>
+        <file alias="dsg_1bar.png">assets/icons/batt/dsg_1bar.png</file>
+        <file alias="dsg_2bar.png">assets/icons/batt/dsg_2bar.png</file>
+        <file alias="dsg_3bar.png">assets/icons/batt/dsg_3bar.png</file>
+        <file alias="dsg_4bar.png">assets/icons/batt/dsg_4bar.png</file>
+        <file alias="dsg_5bar.png">assets/icons/batt/dsg_5bar.png</file>
+        <file alias="dsg_6bar.png">assets/icons/batt/dsg_6bar.png</file>
+        <file alias="dsg_full.png">assets/icons/batt/dsg_full.png</file>
+        <file alias="unknown.png">assets/icons/batt/unknown.png</file>
+    </qresource>
+    <qresource prefix="/videos">
+        <file alias="DarkStar.gif">assets/videos/DarkStar.gif</file>
+        <file alias="DBZ.gif">assets/videos/DBZ.gif</file>
+        <file alias="Earth.gif">assets/videos/Earth.gif</file>
+        <file alias="Jupiter.gif">assets/videos/Jupiter.gif</file>
+        <file alias="SpaceDebrie280.gif">assets/videos/SpaceDebrie280.gif</file>
+        <file alias="volleyball.gif">assets/videos/volleyball.gif</file>
+    </qresource>
+    <qresource prefix="/icons/location">
+        <file alias="nolock.png">assets/icons/location/nolock.png</file>
+        <file alias="off.png">assets/icons/location/off.png</file>
+        <file alias="okay.png">assets/icons/location/okay.png</file>
+    </qresource>
+    <qresource prefix="/icons/adsb">
+        <file alias="off.png">assets/icons/adsb/off.png</file>
+        <file alias="on.png">assets/icons/adsb/on.png</file>
+    </qresource>
+    <qresource prefix="/icons/settings">
+        <file alias="checkbox_false.png">assets/icons/settings/checkbox_false.png</file>
+        <file alias="checkbox_true.png">assets/icons/settings/checkbox_true.png</file>
+        <file alias="toggle_off.png">assets/icons/settings/toggle_off.png</file>
+        <file alias="toggle_on.png">assets/icons/settings/toggle_on.png</file>
+    </qresource>
+</RCC>

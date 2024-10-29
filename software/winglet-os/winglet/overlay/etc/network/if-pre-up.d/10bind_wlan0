@@ -1,0 +1,59 @@
+#!/bin/sh
+
+if ! [ "$IFACE" = "wlan0" ]; then
+    # Not our interface, quit
+    exit 0
+fi
+
+randmac() {
+   # Need Random Locally Administratively Assigned MAC Address
+   # (lower 4 bits of first octet = 2)
+   # Upper 4 bits can be specified, but if not provided default to 7
+   if [ -z "$1" ]; then
+       echo -n "72"
+   else
+       echo -n "${1}2"
+   fi
+   head -c 5 /dev/urandom | hexdump -e '5 1 ":%02X""\n"'
+}
+
+# Discover usb interface
+USB_PATH="$(ls -d /sys/devices/platform/soc/4200000.usb/usb*)"
+USB_NAME="$(basename "$USB_PATH")"
+USB_DEV="${USB_NAME#"usb"}-1"
+
+if ! [ -d "$USB_PATH/$USB_DEV" ]; then
+    echo Failed to discovery wifi card usb address
+    exit 1
+fi
+
+# Bind interface
+(echo "$USB_DEV" > /sys/bus/usb/drivers/usb/bind) 2> /dev/null
+
+# Wait for interface to appear
+count=0
+while ! NETDEV=$(ls $USB_PATH/$USB_DEV/$USB_DEV*/net 2> /dev/null); do
+    count=$((count+1))
+    if [ $count = 20 ]; then
+        echo "Failed to discover wlan interface"
+        exit 1
+    fi
+    sleep 0.25
+done
+
+if ! [ $NETDEV = "wlan0" ]; then
+    echo "Didn't discover as wlan0"
+    exit 1
+fi
+
+# Set MAC Address
+MACADDR_FILE=/var/lib/wlan.macaddr
+
+if ! [ -f "$MACADDR_FILE" ]; then
+    randmac 3 > $MACADDR_FILE
+    echo -n "Generated Random Wifi MAC: "
+    cat $MACADDR_FILE
+fi
+
+WLANMAC=$(cat $MACADDR_FILE)
+ifconfig $NETDEV hw ether $WLANMAC

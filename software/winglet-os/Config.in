@@ -1,0 +1,27 @@
+# make the variant name available as a Config.in variable
+#
+# you can use BR2SM_PROJECT_NAME to have some options only appear for some variants
+#
+#config BR2SM_PROJECT_NAME
+#	string
+#	option env="PROJECT_NAME"
+#
+
+menu "Winglet OS Configuration"
+
+config WINGLET_BOARD_TYPE
+	string "Winglet Board Type"
+	default bub
+	help
+		The board type to compile for this buildroot variant
+		This should only be a temporary fix
+
+config WINGLET_OS_VERSION
+	string "Winglet OS Version"
+	default 0.1
+	help
+		Version for this Winglet OS Build
+
+endmenu
+
+source "$BR2_EXTERNAL_WINGLET_OS_PATH/package/Config.in"

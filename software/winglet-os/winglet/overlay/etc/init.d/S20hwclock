@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Nothing to do at startup
+start() { :; }
+
+# On system shutdown, write linux time to the hardware RTC so it's saved across the power cycle
+stop() {
+    hwclock -w
+}
+
+# Nothing to do at restart, only runs at shutdown
+restart() { :; }
+
+case "$1" in
+  start|stop|restart)
+        "$1"
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

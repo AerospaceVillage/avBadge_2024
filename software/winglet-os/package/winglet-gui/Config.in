@@ -1,0 +1,8 @@
+config BR2_PACKAGE_WINGLET_GUI
+	bool "winglet-gui"
+	depends on BR2_PACKAGE_QT5
+	select BR2_PACKAGE_QT5BASE_WIDGETS
+	help
+		Badge UI package winglet-gui
+		
+		https://www.aerospacevillage.org

@@ -1,0 +1,37 @@
+#!/bin/sh
+
+map_devices() {
+    mkdir -p /dev/inputs-by-name
+    for input_class in /sys/class/input/event*; do
+        local input_name="$(cat $input_class/device/name)"
+        local input_dev="$(cat $input_class/dev | tr ':' ' ')"
+        if [ -z "$input_name" ] || [ -z "$input_dev" ]; then
+            continue
+        fi
+        local new_input_path="/dev/inputs-by-name/$input_name"
+        rm -f "$new_input_path"
+        mknod -m 640 "$new_input_path" c $input_dev
+    done
+}
+
+start() {
+    map_devices
+}
+
+stop() { :; }
+
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+  start|stop|restart)
+        "$1"
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

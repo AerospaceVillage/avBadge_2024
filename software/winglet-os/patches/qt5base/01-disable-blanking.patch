@@ -1,0 +1,13 @@
+diff --git a/src/platformsupport/fbconvenience/qfbvthandler.cpp b/src/platformsupport/fbconvenience/qfbvthandler.cpp
+index 427f013f..6203d2be 100644
+--- a/src/platformsupport/fbconvenience/qfbvthandler.cpp
++++ b/src/platformsupport/fbconvenience/qfbvthandler.cpp
+@@ -80,7 +80,7 @@ static void setTTYCursor(bool enable)
+         fd = QT_OPEN(*dev, O_RDWR);
+         if (fd != -1) {
+             // Enable/disable screen blanking and the blinking cursor.
+-            const char *termctl = enable ? "\033[9;15]\033[?33h\033[?25h\033[?0c" : "\033[9;0]\033[?33l\033[?25l\033[?1c";
++            const char *termctl = enable ? "\033[9;0]\033[?33h\033[?25h\033[?0c" : "\033[9;0]\033[?33l\033[?25l\033[?1c";
+             QT_WRITE(fd, termctl, strlen(termctl) + 1);
+             QT_CLOSE(fd);
+             return;

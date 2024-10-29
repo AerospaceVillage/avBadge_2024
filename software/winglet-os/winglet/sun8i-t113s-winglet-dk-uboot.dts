@@ -1,0 +1,261 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+// Copyright (C) 2022 Arm Ltd.
+/*
+ * Allwinner
+ * DCAV Winglet-DK : Robert Pafford (rjp5th), Adam Batori (HCAdam)
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+#include "sun8i-t113s.dtsi"
+
+#define LCD_PINDEF(port, pin) ((port << 16) | pin)
+#define LCD_COMMAND(cmd) ((1 << 31) | cmd)
+#define LCD_DELAY_MS(time) ((1 << 30) | time)
+#define BMU_COMMAND(reg, val) ((reg << 8) | val)
+
+/ {
+	model = "DCAV Winglet Devkit";
+	compatible = "dcav,winglet-dk", "allwinner,sun8i-t113s";
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		recovery-pin = "PG12";  // Hold B-button on PCB to enter recovery
+		fdt-filename = "sun8i-t113s-winglet-dk.dtb";
+	};
+
+
+	/* board wide system power rail: on whenever system is on, provided by BMU */
+	reg_vsys: regulator-vsys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-vsys";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <4200000>;
+		regulator-always-on;
+	};
+
+	/* Regulator to control OTG pin on board to generate 5V on battery power */
+	reg_vcc5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-5v";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&pio 6 2 GPIO_ACTIVE_HIGH>;			// PG2
+		startup-delay-us = <2000>;
+		enable-active-high;
+		vin-supply = <&reg_vsys>;
+	};
+
+	/* TPS63802 3.3V DC/DC regulator on the board */
+	reg_3v3: regulator-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&reg_vsys>;
+	};
+
+	/* ZD8028C 0.9V DC/DC regulator on the board */
+	reg_vcc_core: regulator-core {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-core";
+		regulator-min-microvolt = <900000>;
+		regulator-max-microvolt = <900000>;
+		vin-supply = <&reg_vsys>;
+	};
+
+	panel: panel {
+		compatible = "sitronix,st7701";
+		status = "okay";
+		backlight = <&panel_backlight>;
+		power-supply = <&reg_vcc5v>;
+
+		cs-pin = <LCD_PINDEF(6, 3)>;		// PG3
+		sck-pin = <LCD_PINDEF(3, 11)>;		// PD11 (RGB_G5)
+		sda-pin = <LCD_PINDEF(3, 12)>;		// PD12 (RGB_R0)
+
+		init-commands =
+			<LCD_COMMAND(0x01)>,
+			<LCD_DELAY_MS(10)>,
+			<LCD_COMMAND(0xFF) 0x77 0x01 0x00 0x00 0x13>,
+			<LCD_COMMAND(0xEF) 0x08>,
+			<LCD_COMMAND(0xFF) 0x77 0x01 0x00 0x00 0x10>,
+			<LCD_COMMAND(0xC0) 0x3B 0x00>,
+			<LCD_COMMAND(0xC1) 0x10 0x0C>,
+			<LCD_COMMAND(0xC2) 0x07 0x0A>,
+			<LCD_COMMAND(0xC3) 0x80 0xA0 0x14>,
+			<LCD_COMMAND(0xC7) 0x00>,
+			<LCD_COMMAND(0xCC) 0x10>,
+			<LCD_COMMAND(0xB0) 0x05 0x12 0x98 0x0E 0x0F 0x07 0x07 0x09 0x09 0x23 0x05 0x52 0x0F 0x67 0x2C 0x11>,
+			<LCD_COMMAND(0xB1) 0x0B 0x11 0x97 0x0C 0x12 0x06 0x06 0x08 0x08 0x22 0x03 0x51 0x11 0x66 0x2B 0x0F>,
+			<LCD_COMMAND(0xFF) 0x77 0x01 0x00 0x00 0x11>,
+			<LCD_COMMAND(0xB0) 0x5D>,
+			<LCD_COMMAND(0xB1) 0x2D>,
+			<LCD_COMMAND(0xB2) 0x81>,
+			<LCD_COMMAND(0xB3) 0x80>,
+			<LCD_COMMAND(0xB5) 0x4E>,
+			<LCD_COMMAND(0xB7) 0x85>,
+			<LCD_COMMAND(0xB8) 0x20>,
+			<LCD_COMMAND(0xC1) 0x78>,
+			<LCD_COMMAND(0xC2) 0x78>,
+			<LCD_COMMAND(0xD0) 0x88>,
+			<LCD_COMMAND(0xE0) 0x00 0x00 0x02>,
+			<LCD_COMMAND(0xE1) 0x06 0x30 0x08 0x30 0x05 0x30 0x07 0x30 0x00 0x33 0x33>,
+			<LCD_COMMAND(0xE2) 0x11 0x11 0x33 0x33 0xF4 0x00 0x00 0x00 0xF4 0x00 0x00 0x00>,
+			<LCD_COMMAND(0xE3) 0x00 0x00 0x11 0x11>,
+			<LCD_COMMAND(0xE4) 0x44 0x44>,
+			<LCD_COMMAND(0xE5) 0x0D 0xF5 0x30 0xF0 0x0F 0xF7 0x30 0xF0 0x09 0xF1 0x30 0xF0 0x0B 0xF3 0x30 0xF0>,
+			<LCD_COMMAND(0xE6) 0x00 0x00 0x11 0x11>,
+			<LCD_COMMAND(0xE7) 0x44 0x44>,
+			<LCD_COMMAND(0xE8) 0x0C 0xF4 0x30 0xF0 0x0E 0xF6 0x30 0xF0 0x08 0xF0 0x30 0xF0 0x0A 0xF2 0x30 0xF0>,
+			<LCD_COMMAND(0xE9) 0x36 0x01>,
+			<LCD_COMMAND(0xEB) 0x00 0x01 0xE4 0xE4 0x44 0x88 0x40>,
+			<LCD_COMMAND(0xED) 0xFF 0x10 0xAF 0x76 0x54 0x2B 0xCF 0xFF 0xFF 0xFC 0xB2 0x45 0x67 0xFA 0x01 0xFF>,
+			<LCD_COMMAND(0xEF) 0x08 0x08 0x08 0x45 0x3F 0x54>,
+			<LCD_COMMAND(0xFF) 0x77 0x01 0x00 0x00 0x00>,
+			<LCD_COMMAND(0x11)>,
+			<LCD_DELAY_MS(120)>,
+			<LCD_COMMAND(0x3A) 0x66>,
+			<LCD_COMMAND(0x35) 0x00>,
+			<LCD_COMMAND(0x29)>;
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing480x480p60 {
+				clock-frequency = <25000000>;
+				hactive = <480>;
+				vactive = <480>;
+				hback-porch = <152>;
+				hfront-porch = <148>;
+				vback-porch = <12>;
+				vfront-porch = <28>;
+				hsync-len = <8>;
+				vsync-len = <8>;
+				bits-per-pixel = <18>;
+				hsync-active = <0>;	// DISPLAY_FLAGS_HSYNC_LOW
+				vsync-active = <0>;	// DISPLAY_FLAGS_VSYNC_LOW
+				de-active = <1>;	// DISPLAY_FLAGS_DE_HIGH
+				pixelclk-active = <1>;	// DISPLAY_FLAGS_PIXDATA_POSEDGE
+			};
+		};
+	};
+
+	panel_backlight: panel-backlight {
+		compatible = "gpio-backlight";
+		gpios = <&pio 3 22 GPIO_ACTIVE_HIGH>;   // PD22 (PWM7)
+		default-on;
+	};
+};
+
+&cpu0 {
+	cpu-supply = <&reg_vcc_core>;
+};
+
+&cpu1 {
+	cpu-supply = <&reg_vcc_core>;
+};
+
+&dcxo {
+	clock-frequency = <24000000>;
+};
+
+&ehci1 {
+	status = "okay";
+};
+
+&mmc0 {
+	pinctrl-0 = <&mmc0_pins>;
+	pinctrl-names = "default";
+	vmmc-supply = <&reg_3v3>;
+	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;      // PF6
+	disable-wp;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&mmc2 {
+	pinctrl-0 = <&mmc2_pins>;
+	pinctrl-names = "default";
+	vmmc-supply = <&reg_3v3>;
+	non-removable;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&ohci1 {
+	status = "okay";
+};
+
+&pio {
+	vcc-pb-supply = <&reg_3v3>;
+	vcc-pc-supply = <&reg_3v3>;
+	vcc-pd-supply = <&reg_3v3>;
+	vcc-pe-supply = <&reg_3v3>;
+	vcc-pf-supply = <&reg_3v3>;
+	vcc-pg-supply = <&reg_3v3>;
+
+	/omit-if-no-ref/
+	uart0_pb_pins: uart0-pb-pins {
+		pins = "PE2", "PE3";
+		function = "uart0";
+	};
+
+	/omit-if-no-ref/
+	i2c2_pins: i2c2_pins@0 {
+		pins = "PG14", "PG15";
+		function = "i2c2-pgh";
+		bias-pull-up;
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pb_pins>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_pins>;
+	status = "okay";
+
+	bmu: axp2585-bmu {
+		compatible = "xpower,axp2585";
+		reg = <0x34>;
+
+		min-poweron-mv = <3150>;  /* Must be 3.15V in order to turn on when on battery power for working display */
+		init-commands = <
+			BMU_COMMAND(0x12, 0xA8)  /* Enable Boost OTG regulator, Lowers VSYS_MIN to 3.0V */
+			BMU_COMMAND(0x13, 0x95)  /* Increase USB-specific boost current limit to 900 mA */
+			BMU_COMMAND(0x15, 0xE5)  /* Power On Key Timings */
+			/* BMU_COMMAND(0x8B, 0x2F)  TODO: Increase fast charge current to 3A */
+			BMU_COMMAND(0x8C, 0x59)  /* Set max charge voltage to 4.192V, precharge to 2.8V, -200 mV before recharge */
+			BMU_COMMAND(0xE0, 0x88)  /* Set battery capacity 3350 mAh */
+			BMU_COMMAND(0xE1, 0xFC)  /* Set battery capacity 3350 mAh Cont. */
+			BMU_COMMAND(0x8E, 0xB8)  /* Enable Battery Presence Detect */
+			BMU_COMMAND(0x33, 0x13)  /* USB C Port Mode Control (DRP) */
+			BMU_COMMAND(0x22, 0x02)  /* CC Clock Enable */
+
+			/* TODO: OCV Percentage Table */
+		>;
+
+	};
+};
+
+&usb_otg {
+	dr_mode = "peripheral";
+	status = "okay";
+};
+
+&usbphy {
+	usb1_vbus-supply = <&reg_vcc5v>;
+	status = "okay";
+};

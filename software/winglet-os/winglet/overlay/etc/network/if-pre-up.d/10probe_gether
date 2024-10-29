@@ -1,0 +1,37 @@
+#!/bin/sh
+
+if ! [ "$IFACE" = "usb0" ]; then
+    # Not our interface, quit
+    exit 0
+fi
+
+randmac() {
+   # Need Random Locally Administratively Assigned MAC Address
+   # (lower 4 bits of first octet = 2)
+   # Upper 4 bits can be specified, but if not provided default to 7
+   if [ -z "$1" ]; then
+       echo -n "72"
+   else
+       echo -n "${1}2"
+   fi
+   head -c 5 /dev/urandom | hexdump -e '5 1 ":%02X""\n"'
+}
+
+MACADDR_FILE=/var/lib/g_ether.macaddrs
+
+if ! [ -f "$MACADDR_FILE" ]; then
+    # We don't have a MAC address file yet, generate it
+    dev_addr=$(randmac 3)
+    host_addr=$(randmac A)
+
+    echo "Generated new USB Eth Gadget MAC Addresses:"
+    echo " - Device Address: $dev_addr"
+    echo " - Host Address: $host_addr"
+
+    echo "dev_addr=$dev_addr" > $MACADDR_FILE
+    echo "host_addr=$host_addr" >> $MACADDR_FILE
+else
+    eval $(cat "$MACADDR_FILE")
+fi
+
+modprobe g_ether dev_addr=${dev_addr} host_addr=${host_addr}

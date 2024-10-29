@@ -1,0 +1,29 @@
+diff --git a/pathnames.h b/pathnames.h
+index f7ca5a7..9c3f1db 100644
+--- a/pathnames.h
++++ b/pathnames.h
+@@ -12,6 +12,7 @@
+  * called by a name other than "ssh" or "Secure Shell".
+  */
+ 
++#define SSHWRITEDIR			"/var/lib/ssh"
+ #define ETCDIR				"/etc"
+ 
+ #ifndef SSHDIR
+@@ -36,11 +37,11 @@
+  */
+ #define _PATH_SERVER_CONFIG_FILE	SSHDIR "/sshd_config"
+ #define _PATH_HOST_CONFIG_FILE		SSHDIR "/ssh_config"
+-#define _PATH_HOST_DSA_KEY_FILE		SSHDIR "/ssh_host_dsa_key"
+-#define _PATH_HOST_ECDSA_KEY_FILE	SSHDIR "/ssh_host_ecdsa_key"
+-#define _PATH_HOST_ED25519_KEY_FILE	SSHDIR "/ssh_host_ed25519_key"
+-#define _PATH_HOST_XMSS_KEY_FILE	SSHDIR "/ssh_host_xmss_key"
+-#define _PATH_HOST_RSA_KEY_FILE		SSHDIR "/ssh_host_rsa_key"
++#define _PATH_HOST_DSA_KEY_FILE		SSHWRITEDIR "/ssh_host_dsa_key"
++#define _PATH_HOST_ECDSA_KEY_FILE	SSHWRITEDIR "/ssh_host_ecdsa_key"
++#define _PATH_HOST_ED25519_KEY_FILE	SSHWRITEDIR "/ssh_host_ed25519_key"
++#define _PATH_HOST_XMSS_KEY_FILE	SSHWRITEDIR "/ssh_host_xmss_key"
++#define _PATH_HOST_RSA_KEY_FILE		SSHWRITEDIR "/ssh_host_rsa_key"
+ #define _PATH_DH_MODULI			SSHDIR "/moduli"
+ 
+ #ifndef _PATH_SSH_PROGRAM

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if ! [ "$IFACE" = "wlan0" ]; then
+    # Not our interface, quit
+    exit 0
+fi
+
+USB_PATH="$(ls -d /sys/devices/platform/soc/4200000.usb/usb*)"
+USB_NAME="$(basename "$USB_PATH")"
+USB_DEV="${USB_NAME#"usb"}-1"
+
+if ! [ -d "$USB_PATH/$USB_DEV" ]; then
+    echo Failed to discovery wifi card usb address
+    exit 1
+fi
+
+echo "$USB_DEV" > /sys/bus/usb/drivers/usb/unbind

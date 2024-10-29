@@ -1,0 +1,25 @@
+#!/bin/sh
+
+start() {
+    # Load all Modules
+    echo Loading Kernel Modules...
+    cat /etc/modules | grep -v '^#' | grep -v "^$" | while read mod; do modprobe "$mod"; done
+}
+
+stop() { :; }
+
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+  start|stop|restart)
+        "$1"
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit $?

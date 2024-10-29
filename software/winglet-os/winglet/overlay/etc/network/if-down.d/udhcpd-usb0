@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if ! [ "$IFACE" = "usb0" ]; then
+    # Not our interface, quit
+    exit 0
+fi
+
+# Kill udhcpd from pidfile
+if [ -f /var/run/udhcpd.pid ]; then
+    kill -INT $(cat /var/run/udhcpd.pid)
+    rm /var/run/udhcpd.pid
+fi

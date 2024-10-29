@@ -1,0 +1,564 @@
+/*
+ * DCAV Winglet-DK : Robert Pafford (rjp5th), Adam Batori (HCAdam)
+ */
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+
+/dts-v1/;
+
+#include <arm/allwinner/sun8i-t113s.dtsi>
+
+/ {
+	model = "DCAV Winglet Devkit";
+	compatible = "dcav,winglet-dk", "allwinner,sun8i-t113s";
+
+	aliases {
+		serial0 = &uart0;
+		serial3 = &uart3;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	/* TPS63802 3.3V DC/DC regulator on the board */
+	reg_3v3: regulator-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&reg_vsys>;
+		regulator-always-on;
+	};
+
+	/* ZD8028C 0.9V DC/DC regulator on the board, also supplied by VSYS */
+	reg_vcc_core: regulator-core {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-core";
+		regulator-min-microvolt = <900000>;
+		regulator-max-microvolt = <900000>;
+		vin-supply = <&reg_vsys>;
+		regulator-always-on;
+	};
+
+	/* Root regulator for entire system (created by BMU) */
+	reg_vsys: regulator-vsys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-vsys";
+		regulator-min-microvolt = <4200000>;
+		regulator-max-microvolt = <4200000>;
+		regulator-always-on;
+	};
+
+	/* Regulator to control OTG pin on board to generate 5V on battery power */
+	reg_vcc5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc-5v";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&pio 6 2 GPIO_ACTIVE_HIGH>;			// PG2
+		startup-delay-us = <2000>;
+		enable-active-high;
+		vin-supply = <&reg_vsys>;
+	};
+
+	/* GPIO Keys */
+	gpio_buttons: gpio_buttons {
+		compatible = "gpio-keys";
+		autorepeat;
+		status = "okay";
+
+		up {
+            label = "up_arrow";
+            linux,code = <KEY_UP>;
+            gpios = <&pio 4 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;    // PE1
+        };
+
+        down {
+            label = "down_arrow";
+            linux,code = <KEY_DOWN>;
+            gpios = <&pio 4 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;    // PE0
+        };
+
+		left {
+			label = "left_arrow";
+			linux,code = <KEY_LEFT>;
+			gpios = <&pio 4 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PE12
+		};
+
+		right {
+			label = "right_arrow";
+			linux,code = <KEY_RIGHT>;
+			gpios = <&pio 4 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PE13
+		};
+
+		key_a {
+			label = "a_button";
+			linux,code = <KEY_A>;
+			gpios = <&pio 6 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PG11
+		};
+
+		key_b {
+		    label = "b_button";
+		    linux,code = <KEY_B>;
+		    gpios = <&pio 6 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PG12
+		};
+
+		key_encoder {
+		    label = "encoder_button";
+		    linux,code = <KEY_ENTER>;
+		    gpios = <&pio 6 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PG10
+		};
+	};
+
+	rotary_encoder: rotary_encoder {
+		compatible = "rotary-encoder";
+		gpios = <&pio 6 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>, <&pio 6 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // PG8, PG9
+		linux,axis = <REL_WHEEL>;
+		rotary-encoder,steps-per-period = <2>;
+		rotary-encoder,encoding = "gray";
+		rotary-encoder,relative-axis;
+		status = "okay";
+	};
+
+	/* Display and Backlight */
+	panel: panel {
+		compatible = "shenzhen-enrich,tv0276a007";
+		/*
+		 * Backup Panel Timing Definitions
+		 *
+
+		u-boot format: x:480,y:480,depth:18,pclk_khz:25000,le:152,ri:148,up:12,lo:28,hs:8,vs:8,sync:0,vmode:0
+
+			static const struct display_timing ampire_am_800480l1tmqw_t00h_timing = {
+				.pixelclock = { 16000000, 25000000, 30000000 },
+				.hactive = { 480, 480, 480 },
+				.hfront_porch = { 148, 148, 148 },
+				.hback_porch = { 152, 152, 152 },
+				.hsync_len = { 8, 8, 8 },
+				.vactive = { 480, 480, 480 },
+				.vfront_porch = { 28, 28, 28 },
+				.vback_porch = { 12, 12, 12 },
+				.vsync_len = { 8, 8, 8 },
+				.flags = DISPLAY_FLAGS_HSYNC_LOW | DISPLAY_FLAGS_VSYNC_LOW |
+					 DISPLAY_FLAGS_DE_HIGH | DISPLAY_FLAGS_PIXDATA_POSEDGE |
+					 DISPLAY_FLAGS_SYNC_POSEDGE,
+			};
+
+			static const struct panel_desc ampire_am_800480l1tmqw_t00h = {
+				.timings = &ampire_am_800480l1tmqw_t00h_timing,
+				.num_timings = 1,
+				.bpc = 6,
+				.size = {
+					.width = 70,
+					.height = 70,
+				},
+				.bus_format = MEDIA_BUS_FMT_RGB666_1X18,
+				.bus_flags = DRM_BUS_FLAG_DE_HIGH |
+					     DRM_BUS_FLAG_PIXDATA_SAMPLE_POSEDGE |
+					     DRM_BUS_FLAG_SYNC_SAMPLE_POSEDGE,
+				.connector_type = DRM_MODE_CONNECTOR_DPI,
+			};
+		*/
+
+		power-supply = <&reg_3v3>;
+		backlight = <&panel_backlight>;
+		no-hpd;
+
+		port {
+			panel_input: endpoint {
+				remote-endpoint = <&tcon_lcd0_out_panel>;
+			};
+		};
+	};
+
+	panel_backlight: panel-backlight {
+		compatible = "pwm-backlight";
+		status = "okay";
+
+		/* PWM CH 7, run at 1 KHz (1ms duty cycle), no flags (not inverted) */
+		pwms = <&pwm 7 1000000 0>;
+
+		/* Use non-linear steps to get a linear perceived brightness increase */
+		/* Use steps of 2000 to make brightess simple from 0-1000 when programming it */
+		brightness-levels = <0 4096 8192 16384 32768 65535>;
+		num-interpolated-steps = <200>;
+
+		/* 75% Default Brightness */
+		default-brightness-level = <750>;
+
+		/* Power supply needed to turn on backlight */
+		power-supply = <&reg_vcc5v>;
+	};
+
+	adsb_rx: adsb-rx0 {
+		status = "okay";
+		compatible = "dcav,winglet-adsb-rx";
+		dsp-inst = <&dsp0>;
+	};
+};
+
+&de {
+	status = "okay";
+
+	/* fbdev_mode_override Format: <fbdev_width, fbdev_height, fb_flags (DRM_MODE_FB_*)>
+	 * 0x1C = DRM_MODE_FB_ALLOW_SCALING | DRM_MODE_FB_CENTER_IMG | DRM_MODE_FB_FILL_BORDER */
+	fbdev_mode_override = <340 340 0x1C>;
+};
+
+/delete-node/ &dsi_in_tcon_lcd0;
+/delete-node/ &tcon_lcd0_out_dsi;
+
+&tcon_tv0 {
+	status = "disabled";
+};
+
+&tcon_lcd0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&lcd_rgb666_pins>;
+	status = "okay";
+};
+
+&tcon_lcd0_out {
+	tcon_lcd0_out_panel: endpoint@0 {
+		reg = <0>;
+		remote-endpoint = <&panel_input>;
+	};
+};
+
+&mixer1 {
+	/* Need to disable mixer 1 or else weird artifacts occur on the display
+	   For whatever reason the last x line will be wrapped around to the first.
+	   To fix it, you need to clear the CORE1_SCLK_GATE register */
+	status = "disabled";
+};
+
+&dcxo {
+	/* Board has 24 MHz crystal */
+	clock-frequency = <24000000>;
+};
+
+&rtc {
+	force-ext-osc;
+};
+
+&usb_otg {
+	dr_mode = "otg";
+	status = "okay";
+};
+
+&usbphy {
+	usb0_vbus-supply = <&reg_vcc5v>;
+	usb0_vbus_power-supply = <&usb_power_supply>;
+	axp2585-bmu = <&battery_power_supply>;
+	status = "okay";
+};
+
+&ehci0 {
+	status = "okay";
+};
+
+&ohci0 {
+	status = "okay";
+};
+
+&ehci1 {
+	status = "okay";
+};
+
+&ohci1 {
+	status = "okay";
+};
+
+&mmc0 {
+	pinctrl-0 = <&mmc0_pins>;
+	pinctrl-names = "default";
+	vmmc-supply = <&reg_3v3>;
+	cd-gpios = <&pio 5 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;     // PF6
+	disable-wp;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&mmc2 {
+	pinctrl-0 = <&mmc2_pins>;
+	pinctrl-names = "default";
+	vmmc-supply = <&reg_3v3>;
+	non-removable;
+	no-1-8-v;
+	bus-width = <4>;
+	status = "okay";
+};
+
+&pio {
+	vcc-pb-supply = <&reg_3v3>;
+	vcc-pc-supply = <&reg_3v3>;
+	vcc-pd-supply = <&reg_3v3>;
+	vcc-pe-supply = <&reg_3v3>;
+	vcc-pf-supply = <&reg_3v3>;
+	vcc-pg-supply = <&reg_3v3>;
+
+	/omit-if-no-ref/
+	uart0_pins: uart0_pins@0 {
+		pins = "PE2", "PE3";
+		function = "uart0";
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/
+	uart3_pins: uart3_pins@0 {
+		pins = "PB6", "PB7";
+		function = "uart3";
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/
+	i2c2_pins: i2c2_pins@0 {
+		pins = "PG14", "PG15";
+		function = "i2c2";
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/
+	pwm7_pin_active: pwm7@0 {
+		pins = "PD22";
+		function = "pwm7";
+		bias-disable;
+	};
+
+	/omit-if-no-ref/
+	pwm7_pin_sleep: pwm7@1 {
+		pins = "PD22";
+		function = "gpio_in";
+		bias-pull-down;
+	};
+
+	/omit-if-no-ref/
+	ledc_pins_active: ledc@0 {
+		pins = "PG13";
+		function = "ledc";
+		bias-pull-down;
+	};
+
+	/omit-if-no-ref/
+	ledc_pins_sleep: ledc@1 {
+		pins = "PG13";
+		function = "gpio_in";
+		bias-pull-down;
+	};
+
+	/omit-if-no-ref/
+	sao_i2c_pins: sao_i2c_pins@0 {
+		pins = "PB2", "PB3";
+		function = "i2c0";
+		bias-pull-up;
+	};
+};
+
+/* Backlight PWM Definition */
+&pwm7 {
+	pinctrl-names = "active", "sleep";
+	pinctrl-0 = <&pwm7_pin_active>;
+	pinctrl-1 = <&pwm7_pin_sleep>;
+	status = "okay";
+};
+
+/* Debug UART */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+/* GPS UART */
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3_pins>;
+	status = "okay";
+
+	gnss: gnss {
+		compatible = "u-blox,neo-6m";
+		current-speed = <9600>;
+		vcc-supply = <&reg_3v3>;
+	};
+};
+
+/* Internal I2C Bus */
+&i2c2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c2_pins>;
+	status = "okay";
+
+	pmu0: pmu@34 {
+		compatible = "x-powers,axp2585";
+		reg = <0x34>;
+		interrupts = <6 1 IRQ_TYPE_LEVEL_LOW>;   // PG1
+		interrupt-parent = <&pio>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		x-powers,drive-vbus-en;
+		pmu_reset = <0>;
+		pmu_irq_wakeup = <0>;
+		pmu_hot_shutdown = <1>;
+		status = "okay";
+
+		wakeup-source;
+
+		usb_power_supply: usb_power_supply {
+			compatible = "x-powers,axp2585-usb-power-supply";
+			status = "okay";
+
+			pmu_usbpc_vol = <4400>;
+
+			wakeup_usb_in;
+			wakeup_usb_out;
+		};
+
+		battery_power_supply: battery_power_supply {
+			compatible = "x-powers,axp2585-battery-power-supply";
+			status = "okay";
+
+			pmu_battery_rdc = <91>;  /* Battery RDC Programming (If not valid) */
+			pmu_battery_cap = <3350>;  /* Battery Capacity mAh */
+			pmu_runtime_chgcur = <1024>; /* TODO: Maybe increase this? Battery Max Charge Current in mA  */
+			pmu_suspend_chgcur = <1024>;  /* Current during suspend */
+			pmu_shutdown_chgcur = <1024>;  /* Current during shutdown */
+			pmu_init_chgvol = <4200>;  /* Max charge 4.2V */
+			pmu_pwroff_vol = <2800>;   /* Shut down at 2.8V */
+
+			pmu_init_chg_pretime = <50>;  /* Safety Timer 1 (Precharge) Timeout minutes */
+			pmu_init_chg_csttime = <720>;  /* Safety Timer 2 (Regular Charge) Timeout minutes */
+			pmu_batt_cap_correct = <0>;  /* Don't update battery capacity on full charges */
+
+			pmu_battery_warning_level1 = <15>;  /* Battery Low Notification */
+			pmu_battery_warning_level2 = <0>;   /* Turning Off Notification */
+			pmu_chgled_type = <0>;  /* Charge LED Mode 0 (Default) */
+
+			/* Battery SOC Map - TODO: Update this */
+			pmu_bat_para1 = <0>;     /* 2.99V */
+			pmu_bat_para2 = <0>;     /* 3.13V */
+			pmu_bat_para3 = <1>;     /* 3.27V */
+			pmu_bat_para4 = <2>;     /* 3.34V */
+			pmu_bat_para5 = <4>;     /* 3.41V */
+			pmu_bat_para6 = <6>;     /* 3.48V */
+			pmu_bat_para7 = <8>;     /* 3.52V */
+			pmu_bat_para8 = <10>;    /* 3.55V */
+			pmu_bat_para9 = <12>;    /* 3.57V */
+			pmu_bat_para10 = <15>;   /* 3.59V */
+			pmu_bat_para11 = <18>;   /* 3.61V */
+			pmu_bat_para12 = <23>;   /* 3.63V */
+			pmu_bat_para13 = <29>;   /* 3.64V */
+			pmu_bat_para14 = <35>;   /* 3.66V */
+			pmu_bat_para15 = <41>;   /* 3.70V */
+			pmu_bat_para16 = <47>;   /* 3.73V */
+			pmu_bat_para17 = <52>;   /* 3.77V */
+			pmu_bat_para18 = <56>;   /* 3.78V */
+			pmu_bat_para19 = <63>;   /* 3.80V */
+			pmu_bat_para20 = <70>;   /* 3.84V */
+			pmu_bat_para21 = <76>;   /* 3.85V */
+			pmu_bat_para22 = <79>;   /* 3.87V */
+			pmu_bat_para23 = <82>;   /* 3.91V */
+			pmu_bat_para24 = <85>;   /* 3.94V */
+			pmu_bat_para25 = <87>;   /* 3.98V */
+			pmu_bat_para26 = <89>;   /* 4.01V */
+			pmu_bat_para27 = <91>;   /* 4.05V */
+			pmu_bat_para28 = <93>;   /* 4.08V */
+			pmu_bat_para29 = <95>;   /* 4.10V */
+			pmu_bat_para30 = <97>;   /* 4.12V */
+			pmu_bat_para31 = <98>;   /* 4.14V */
+			pmu_bat_para32 = <99>;   /* 4.15V */
+
+			wakeup_bat_out;
+			/* wakeup_bat_in; */
+			wakeup_bat_charging;
+			/* wakeup_bat_charge_over; */
+			/* wakeup_low_warning1; */
+			wakeup_low_warning2;
+			/* wakeup_bat_untemp_work; */
+			/* wakeup_bat_ovtemp_work; */
+			/* wakeup_bat_untemp_chg; */
+			/* wakeup_bat_ovtemp_chg; */
+
+			pmu_bat_temp_enable = <1>;
+			pmu_bat_charge_ltf = <1485>;
+			pmu_bat_charge_htf = <295>;
+			pmu_bat_shutdown_ltf = <2420>;
+			pmu_bat_shutdown_htf = <218>;
+		};
+
+		regulator0: regulators@0 {
+			status = "okay";
+			compatible = "x-powers,axp2202-regulator";
+
+			reg_drivevbus: drivevbus {
+				regulator-name = "axp2585-drivevbus";
+			};
+		};
+
+		virtual-drivevbus {
+			compatible = "xpower-vregulator,drivevbus";
+			drivevbus-supply = <&reg_drivevbus>;
+		};
+
+		powerkey0: powerkey@0 {
+			status = "okay";
+			compatible = "x-powers,axp2585-pek";
+			pmu_powkey_off_time = <6500>;
+			pmu_powkey_long_time = <2500>;
+			pmu_powkey_on_time = <1000>;
+			wakeup_rising;
+			/* wakeup_falling; */
+		};
+	};
+};
+
+/* SAO I2C Bus */
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sao_i2c_pins>;
+	status = "okay";
+};
+
+&cpu0 {
+	cpu-supply = <&reg_vcc_core>;
+	clock-frequency = <800000000>;
+};
+
+&cpu1 {
+	cpu-supply = <&reg_vcc_core>;
+	clock-frequency = <800000000>;
+};
+
+&wdt {
+	status = "okay";
+};
+
+&can1 {
+	status = "disabled";
+};
+
+&ledc {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&ledc_pins_active>;
+	pinctrl-1 = <&ledc_pins_sleep>;
+	led_count = <24>;
+	output_mode = "GRB";
+	reset_ns = <84>;
+	t1h_ns = <900>;
+	t1l_ns = <1100>;
+	t0h_ns = <280>;
+	t0l_ns = <1720>;
+	wait_time0_ns = <84>;
+	wait_time1_ns = <84>;
+	wait_data_time_ns = <600000>;
+	led_regulator = <&reg_vcc5v>;
+	status = "okay";
+};
+
+&dsp0 {
+	pinctrl-0 = <&dsp_jtag_pins>;
+	status = "okay";
+};

@@ -1,0 +1,33 @@
+             !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+             !!!!!!!!!! NOTICE !!!!!!!!!!
+             !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+The root filesystem is mounted as read only! This is
+done to prevent filesystem corruption from abrupt
+shut downs. To conserve space, the rootfs is imaged
+as ext2 WHICH IS NOT JOURNALED and much more
+susceptible to power loss events than the standard ext4.
+
+MOST PEOPLE DO NOT NEED TO REMOUNT THIS AS READ WRITE!
+Instead, work out of the /var folder (your home folder
+is in /var/root, which is writable). Most things can
+be done in this folder.
+
+Although the OS does not prevent you from remounting
+the root partition as R/W, take care to avoid damaging
+critical OS files, as this image cannot heal from a
+damaged rootfs, unlike a corrupted user data partition.
+
+Additionally, if any updates are released in the future,
+they will only make an effort to preserve the user data
+partition. Any changes to the rootfs WILL be lost.
+
+YOU HAVE BEEN WARNED!
+
+The magic command to make it r/w is:
+    mount -o remount,rw /
+
+and back to read only (DO THIS BEFORE KILLING POWER!)
+    mount -o remount,ro /
+
+Use with caution! (And happy hacking!)

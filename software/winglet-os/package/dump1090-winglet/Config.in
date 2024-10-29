@@ -1,0 +1,9 @@
+config BR2_PACKAGE_DUMP1090_WINGLET
+	bool "dump1090-winglet"
+	depends on !BR2_PACKAGE_DUMP1090
+	help
+	  Dump 1090 is a Mode S decoder specifically designed for RTLSDR devices.
+	  There are additional patches to enable this to support the DSP integrated in
+	  the Aersoapce Village ADSB Badge that cannot be applied to the standard dump1090.
+
+	  https://github.com/antirez/dump1090/
