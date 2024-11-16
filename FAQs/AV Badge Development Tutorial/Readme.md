@@ -1,6 +1,6 @@
-# Tutorial on how to Creat QT widget for aerospace village badge
+# Tutorial on how to Create QT widget for aerospace village badge
 
-## Install QT Creater and QT5
+## Install QT Creator and QT5
 ```
 sudo apt-get update
 sudo apt install qtcreator
@@ -24,16 +24,16 @@ Open project
 The easiest way is to got to File->New File or Project...  
 Select QT-> QT Designer Form Class
 ![Generate a new File](newFile.png "Generate a new file")  
-Select From Tempalete Widget  
+Select From Template Widget  
 ![Generate a new widget](newFileWidget.png "Generate a new widget")  
 Set a **Name** then Next  
 *This will generate the **.h, .cpp, .ui** in the correct location*
 
 ## In QTCreator got to the Class Name .ui file you just made 
 On the right click the Object name  
-then on the bottom right Select the geonmetry *click the arrow next to it* set it width=480, height=480
+then on the bottom right Select the geometry *click the arrow next to it* set it width=480, height=480
 ![edit attributes](selectQWidget.png "edit attributes")  
-Add in a Veritcal layout **make the box match the dimentions of the view**  
+Add in a Vertical layout **make the box match the dimensions of the view**  
 ![edit Vertical space](addVericalLayout2.png "edit vertical space")  
 Then add a widget  
 ![edit widget](addWidget2.png "edit widget")  
@@ -57,7 +57,7 @@ ui->verticalStackedWidget->addWidget(widget2);
 
 ```
 
-Detects Key pressess  
+Detects Key presses  
 in the example if X is pressed show widget1
 ```
 void MainWindow::keyPressEvent( QKeyEvent* event ) 
@@ -75,12 +75,12 @@ void MainWindow::updateText()
 use **Alt+Enter** for the IDE to add it to .h (set it to public or private class)
 
 
-# Mutiple Layer of Images: 
+# Multiple Layer of Images: 
 ## Make a new widget
 The easiest way is to got to File->New File or Project...  
 Select QT-> QT Designer Form Class
 ![Generate a new File](newFile.png "Generate a new file")  
-Select From Tempalete Widget  
+Select From Template Widget  
 ![Generate a new widget](newFileWidget.png "Generate a new widget")  
 Set a **Name** then Next  
 *This will generate the **.h, .cpp, .ui** in the correct location*
