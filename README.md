@@ -32,9 +32,9 @@ But this badge doesn't just display aircraft, it's also an entire linux single-b
 - Bezel - [hardware/bezel.stl](hardware/bezel.stl)
 
 ###Software releases
-- v1.1 - [releases/tag/v1.1](releases/tag/v1.1)
+- v1.1 - [https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1](https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1)
 
 ###Tutorials and FAQ
-- How to create a QT widget for the AV Badge - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/AV%20Badge%20Development%20Tutorial](https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/AV%20Badge%20Development%20Tutorial)
-- How to build WingletOS - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/building_WingletOS.md](https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/building_WingletOS.md)
-- FAQ - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/FAQ.md](https://github.com/AerospaceVillage/avBadge_2024/tree/main/FAQ/FAQ.md)
+- How to create a QT widget for the AV Badge - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/AV%20Badge%20Development%20Tutorial](https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/AV%20Badge%20Development%20Tutorial)
+- How to build WingletOS - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/building_WingletOS.md](https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/building_WingletOS.md)
+- FAQ - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/FAQ.md](https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/FAQ.md)
