@@ -1,3 +1,5 @@
+# NOTE: Winglet OS 2.0 Source Code will be released shortly after DEFCON. For right now check out the releases page to get the latest version.
+
 # AV Badge 2024
 
 The Aerospace Village badge for DC32 truly is both a feat of engineering and a work of art. The headlining feature of the badge is its ability to natively receive and display nearby aircraft using the ADS-B signals that most aircraft transmit. What normally takes specialized components and an SDR to receive the 1090 MHz signal, this badge uses some hardware hacks and clever trickery to make regular components do the work.
