@@ -4,9 +4,12 @@
 ```
 sudo apt-get update
 sudo apt install qtcreator
+```
+and
+```
 sudo apt install qt5-default
 ```
-or
+or if that's not available:
 ```
 sudo apt install qtbase5-dev qt5-qmake clang g++
 ```
@@ -21,7 +24,7 @@ Open project
 
 
 ## Make a new widget
-The easiest way is to got to File->New File or Project...  
+The easiest way is to got to File->New File (or Project)...  
 Select QT-> QT Designer Form Class
 ![Generate a new File](newFile.png "Generate a new file")  
 Select From Template Widget  
@@ -29,12 +32,12 @@ Select From Template Widget
 Set a **Name** then Next  
 *This will generate the **.h, .cpp, .ui** in the correct location*
 
-## In QTCreator got to the Class Name .ui file you just made 
+## In QTCreator go to the Class Name .ui file you just made 
 On the right click the Object name  
 then on the bottom right Select the geometry *click the arrow next to it* set it width=480, height=480
 ![edit attributes](selectQWidget.png "edit attributes")  
 Add in a Vertical layout **make the box match the dimensions of the view**  
-![edit Vertical space](addVericalLayout2.png "edit vertical space")  
+![edit Vertical space](addVerticalLayout2.png "edit vertical space")  
 Then add a widget  
 ![edit widget](addWidget2.png "edit widget")  
 At the end it should look like this  
@@ -184,7 +187,7 @@ we are using thi https://github.com/tumic0/QtPBFImagePlugin
 so style guide is https://github.com/tumic0/QtPBFImagePlugin-styles
 
 
-# QT Quick QML application - different then above
+# QT Quick QML application - different than above
 
 - qtlocation5-dev for /usr/include/x86_64-linux-gnu/qt5/QtLocation/QtLocation;
 - qtpositioning5-dev for /usr/include/x86_64-linux-gnu/qt5/QtPositioning/QtPositioning.
@@ -196,11 +199,12 @@ sudo apt install qml-module-qtlocation qml-module-qtpositioning
 
 
 # Flashing Board
-Download the winglet-os.img.gz for TODO:INSERTLINK
+Download the winglet-os.img.gz
+Choose either the RPI Imager or Balena Etcher:
+
+**EITHER**\
 Install the RPI Imager from https://www.raspberrypi.com/software/
-
 Plug In board to USB-C and Hold the B button should say USB Recovery Mode on the Screen 
-
 Now in the RPI Installer Select the winglet-os.img.gz file and flash it to the USB device\
 For Device:No Filter\
 For OS: Use Custom (select the winglet-os.img.gz)\
@@ -209,11 +213,11 @@ Select Next\
 Etcher https://etcher.balena.io/ \
 Select Device\
 Select winglet-os.img.gz file\
-Select Flash\
+Select Flash
 
-Wait for system to say done ( May press the restart button on the Badge for the update to take place)
+Wait for system to say done (may press the restart button on the Badge for the update to take place)
 
 
 # Debug 
 ### You can debug form QTCreator/Device SSH/Device Debug Options
-SSH root 192.168.100.1 through USB C NO PWD
+SSH root 192.168.100.1 through USB-C NO PWD
