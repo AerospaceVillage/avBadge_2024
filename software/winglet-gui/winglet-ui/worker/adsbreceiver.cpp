@@ -1,11 +1,18 @@
 #include "adsbreceiver.h"
 #include "wingletgui.h"
+#include <cmath>
+
+#define earthRadiusKm 6371.0
 
 namespace WingletUI {
 
 ADSBReceiver::ADSBReceiver(QThread *ownerThread):
     AbstractSocketWorker(ownerThread)
 {
+    // Load the last latitude/longitude readings in
+    currentGPS = GPSReading(WingletGUI::inst->settings.lastLatitude(),
+                            WingletGUI::inst->settings.lastLongitude(), false);
+
     start("localhost", 30003);
     timer = new QTimer(this);
     timer->setInterval(3000);
@@ -113,6 +120,9 @@ void ADSBReceiver::handleLine(const QString &line) {
         entry->lon = lon;
         entry->lonValid = true;
         entry->latValid = true;
+
+        entry->distance = distanceEarth(lat, lon);  //Update distance upon reciept of new message
+        entry->bearing = get_bearing(lat, lon);     //Update bearing upon reciept of new message
     }
     if(messageType == 6){
         int squawk = query[17].toInt(&okay);
@@ -158,6 +168,41 @@ void ADSBReceiver::clearStalePlanesUnderLock()
             it++;
         }
     }
+}
+
+float ADSBReceiver::distanceEarth(double lat2d, double lon2d) {
+  double lat1r, lon1r, lat2r, lon2r, u, v;
+  lat1r = currentGPS.latitude * M_PI / 180;
+  lon1r = currentGPS.longitude * M_PI / 180;
+  lat2r = lat2d * M_PI / 180;
+  lon2r = lon2d * M_PI / 180;
+  u = sin((lat2r - lat1r)/2);
+  v = sin((lon2r - lon1r)/2);
+  return 2.0 * earthRadiusKm * asin(sqrt(u * u + cos(lat1r) * cos(lat2r) * v * v)) * 0.539957;
+}
+
+float ADSBReceiver::get_bearing(float lat, float lon){
+    /// center location scope
+    float startLat = currentGPS.latitude * (M_PI/180);
+    float startLon = currentGPS.longitude * (M_PI/180);
+
+    /// location of plane
+    float endLat = lat * (M_PI/180);
+    float endLon = lon * (M_PI/180);
+
+    float dLong = endLon - startLon;
+
+    float dPhi = log(tan(endLat/2.0 + M_PI/4.0)/tan(startLat/2.0 + M_PI/4.0));
+    if(abs(dLong) > M_PI){
+        if (dLong > 0.0){
+            dLong = -(2.0 * M_PI - dLong);
+        } else {
+            dLong = (2.0 * M_PI + dLong);
+        }
+    }
+    float bearing = fmod(((atan2(dLong, dPhi)*(180/M_PI)) + 360.0), 360.0);
+
+    return bearing;
 }
 
 } // namespace WingletUI

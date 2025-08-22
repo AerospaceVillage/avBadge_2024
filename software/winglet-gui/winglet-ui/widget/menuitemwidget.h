@@ -4,22 +4,25 @@
 #include <QWidget>
 #include <QHBoxLayout>
 #include <QLabel>
+#include "winglet-ui/widget/elidedlabel.h"
 
 class QGraphicsOpacityEffect;
 
 namespace WingletUI {
 
-class ResizableQLabel: public QLabel {
+class ResizableLabel: public ElidedLabel {
     Q_OBJECT
 
     Q_PROPERTY(float fontSize READ fontSize WRITE setFontSize)
 
 public:
-    explicit ResizableQLabel(QWidget *parent = nullptr): QLabel(parent) {}
-    virtual ~ResizableQLabel() {}
+    explicit ResizableLabel(QWidget *parent = nullptr): ElidedLabel(parent) {}
+    virtual ~ResizableLabel() {}
 
     float fontSize() const { return font().pointSizeF(); }
     void setFontSize(float pointSizeF);
+
+    int maxContentsWidth = 480;
 };
 
 
@@ -47,31 +50,30 @@ public:
 
     void setData(const QString &text, const QPixmap &icon = {}, const QString &secondLine = "", bool secondLineVisible = false);
     void setFontSize(float pointSizeF) { textLabel->setFontSize(pointSizeF); regenSize(); }
-    QSize computeSize(bool showSecondLine, int fontPointSize = -1)  // Computes size, if fontPointSize == -1, it uses the current label font size
-    {
-        QSize secondLineSize = computeSecondLineSize(showSecondLine);
-        return computeSize(computeTextLabelSize(fontPointSize), computeIconSize(), secondLineSize);
-    }
+    QSize computeSize(bool showSecondLine, int fontPointSize = -1);  // Computes size, if fontPointSize == -1, it uses the current label font size
     QSize computeSize(QSize textLabelSize, QSize iconSize, QSize secondLineSize);
     QSize computeIconSize();
-    QSize computeTextLabelSize(int fontPointSize = -1);
-    QSize computeSecondLineSize(bool canShowSecondLine);
+    QSize computeTextLabelSize(int maxWidth, int fontPointSize = -1);
+    QSize computeSecondLineSize(bool canShowSecondLine, int maxWidth);
 
     void overrideForegroundRole(QPalette::ColorRole role);
     void resetForegroundRole();
     bool hasSecondLine() { return !secondLineLabel->text().isEmpty(); }
 
+    void setMaxContentsWidth(int maxWidth) { maxContentsWidth = maxWidth; regenSize(); }
+
 private:
     QGridLayout *layout;
     QLabel *iconLabel;
     QGraphicsOpacityEffect* iconOpacityEffect;
-    ResizableQLabel *textLabel;
+    ResizableLabel *textLabel;
     QGraphicsOpacityEffect* textOpacityEffect;
-    QLabel *secondLineLabel;
+    ElidedLabel *secondLineLabel;
     QGraphicsOpacityEffect* secondLineOpacityEffect;
 
     void regenSize();
 
+    int maxContentsWidth = 480;
     const int iconTextSpacing = 10;
 
 signals:

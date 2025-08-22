@@ -4,7 +4,7 @@
 namespace WingletUI {
 
 const QList<QPair<QString, int>> networkOptions = {
-    {"Forget Nework", KnownNetworksModel::FORGET_NETWORK}
+    {"Forget Network", KnownNetworksModel::FORGET_NETWORK}
 };
 
 const quintptr rootRowInternalId = 0xFFFFFFFF;
@@ -34,6 +34,7 @@ void KnownNetworksModel::networkIdChanged(int networkId) {
     int oldIdx = knownNetworkIdxMap.indexOf(oldNetworkId);
     int newIdx = knownNetworkIdxMap.indexOf(currentNetworkId);
 
+    // TODO: This logic looks backwards, shouldn't it be oldIdx == newIdx?
     if (oldIdx < 0 || newIdx < 0 || oldIdx != newIdx) {
         return;
     }

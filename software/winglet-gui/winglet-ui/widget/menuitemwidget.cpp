@@ -9,9 +9,9 @@ MenuItemWidget::MenuItemWidget(QWidget *parent)
     : QWidget{parent}
 {
     layout = new QGridLayout(this);
-    iconLabel = new QLabel();
-    textLabel = new ResizableQLabel();
-    secondLineLabel = new QLabel();
+    iconLabel = new QLabel(this);
+    textLabel = new ResizableLabel(this);
+    secondLineLabel = new ResizableLabel(this);
 
     iconOpacityEffect = new QGraphicsOpacityEffect(iconLabel);
     iconLabel->setGraphicsEffect(iconOpacityEffect);
@@ -48,9 +48,8 @@ void MenuItemWidget::regenSize()
     if (blank())
         return;
 
-    QSize labelSize = computeTextLabelSize();
-    textLabel->resize(labelSize);
-    textLabel->setFixedSize(labelSize);
+    int maxWidth = maxContentsWidth;
+
     QSize iconSize = computeIconSize();
     if (!iconSize.isEmpty())
     {
@@ -58,12 +57,20 @@ void MenuItemWidget::regenSize()
         iconLabel->setFixedSize(iconSize);
         iconLabel->setVisible(true);
         layout->setHorizontalSpacing(iconTextSpacing);
+        maxWidth -= iconSize.width() + iconTextSpacing;
     }
     else {
         iconLabel->setVisible(false);
         layout->setHorizontalSpacing(0);
     }
-    QSize secondLineSize = computeSecondLineSize(secondLineOpacityEffect->opacity() > 0);
+
+    QSize labelSize = computeTextLabelSize(maxWidth);
+    textLabel->resize(labelSize);
+    textLabel->setFixedSize(labelSize);
+    if (maxWidth > 0)
+        textLabel->maxContentsWidth = maxWidth;
+
+    QSize secondLineSize = computeSecondLineSize(secondLineOpacityEffect->opacity() > 0, maxWidth);
     if (!secondLineSize.isEmpty()) {
         secondLineLabel->resize(secondLineSize);
         secondLineLabel->setFixedSize(secondLineSize);
@@ -75,6 +82,17 @@ void MenuItemWidget::regenSize()
     QSize fullSize = computeSize(labelSize, iconSize, secondLineSize);
     resize(fullSize);
     setFixedSize(fullSize);
+}
+
+QSize MenuItemWidget::computeSize(bool showSecondLine, int fontPointSize)
+{
+    int maxWidth = maxContentsWidth;
+    QSize iconSize = computeIconSize();
+    if (!iconSize.isEmpty())
+        maxWidth -= iconSize.width() + iconTextSpacing;
+
+    QSize secondLineSize = computeSecondLineSize(showSecondLine, maxWidth);
+    return computeSize(computeTextLabelSize(maxWidth, fontPointSize), iconSize, secondLineSize);
 }
 
 QSize MenuItemWidget::computeSize(QSize textLabelSize, QSize iconSize, QSize secondLineSize)
@@ -108,14 +126,11 @@ void MenuItemWidget::setData(const QString &text, const QPixmap &icon, const QSt
     regenSize();
 }
 
-QSize MenuItemWidget::computeTextLabelSize(int fontPointSize)
+QSize MenuItemWidget::computeTextLabelSize(int maxWidth, int fontPointSize)
 {
-    QFont newFont = textLabel->font();
-    if (fontPointSize > 0)
-        newFont.setPointSize(fontPointSize);
-
-    QFontMetrics fm(newFont);
-    return QSize(fm.horizontalAdvance(textLabel->text()), fm.height());
+    QSize size = textLabel->calcSingleLineSize(maxWidth, fontPointSize);
+    size.rwidth()++;  // Add single pixel to size so we don't get weird rendering bugs
+    return size;
 }
 
 QSize MenuItemWidget::computeIconSize()
@@ -124,14 +139,15 @@ QSize MenuItemWidget::computeIconSize()
     return pixmap.isNull() ? QSize() : pixmap.size();
 }
 
-QSize MenuItemWidget::computeSecondLineSize(bool canShowSecondLine)
+QSize MenuItemWidget::computeSecondLineSize(bool canShowSecondLine, int maxWidth)
 {
     if (secondLineLabel->text().isEmpty())
         return {};
     if (!canShowSecondLine)
         return {};
-    QFontMetrics fm(secondLineLabel->font());
-    return QSize(fm.horizontalAdvance(secondLineLabel->text()), fm.height());
+    QSize size = secondLineLabel->calcSingleLineSize(maxWidth);
+    size.rwidth()++;  // Add single pixel to size so we don't get weird rendering bugs
+    return size;
 }
 
 float MenuItemWidget::opacity() const
@@ -170,7 +186,7 @@ void MenuItemWidget::resetForegroundRole()
     textLabel->setForegroundRole(QPalette::HighlightedText);
 }
 
-void ResizableQLabel::setFontSize(float pointSizeF) {
+void ResizableLabel::setFontSize(float pointSizeF) {
     if (fontSize() == pointSizeF)
         return;
     else if (pointSizeF < 1)
@@ -180,10 +196,10 @@ void ResizableQLabel::setFontSize(float pointSizeF) {
     newFont.setPointSizeF(pointSizeF);
     setFont(newFont);
 
-    QFontMetrics fm(newFont);
-    QSize size(fm.horizontalAdvance(text()), fm.height());
-    resize(size);
-    setFixedSize(size);
+    QSize targetSize = calcSingleLineSize(maxContentsWidth);
+    targetSize.rwidth()++;  // Add single pixel to size so we don't get weird rendering bugs
+    resize(targetSize);
+    setFixedSize(targetSize);
 }
 
 } // namespace WingletUI

@@ -1,9 +1,11 @@
-Winglet OS 1.1
-What's New in Winglet OS 1.1:
- - UI Overhaul
- - Persistent Settings
- - ADSB Stale Plane Removal
- - GPS/WiFi based Time Sync
- - About Device Screen
- - Badge Owners Discord Invitation
- - Improved stability
+Winglet OS 2.0
+What's New in Winglet OS:
+ - Increased ADSB Range/Reliability
+ - Map Scope & GPS View
+ - Flight Board Improvements (scroll, sort)
+ - Custom Media from SD in Media Player
+ - WiFi Scanning/Connecting
+ - Light Mode
+ - USB Host Mode Reliability Improvements
+ - Optional 3A Charge Rate
+ - Aerospace Village DC33 SAO Support

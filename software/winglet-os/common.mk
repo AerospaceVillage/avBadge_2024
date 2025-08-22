@@ -29,7 +29,6 @@ MAKEARGS += PROJECT_VARIANT_DIR=$(PROJECT_VARIANT_DIR)
 # location of default defconfig
 DEFCONFIG_FILE=$(PROJECT_VARIANT_DIR)/defconfig
 DEFCONFIG := BR2_DEFCONFIG=$(DEFCONFIG_FILE)
-ALT_DEFCONFIG := BR2_DEFCONFIG=$(CURDIR)/defconfig
 
 MAKEFLAGS += --no-print-directory
 
@@ -49,15 +48,9 @@ default:
 
 .PHONY: $(special_target) $(all) 
 
-# update from current config and save it as defconfig
+# Force runs defconfig on buildroot (useful before calling a specific target)
 defconfig:
-	$(MAKE) $(MAKEARGS) $(ALT_DEFCONFIG) $@
-	$(MAKE) $(MAKEARGS) $(DEFCONFIG) savedefconfig
-
-# update from defconfig and save it as current configuration
-savedefconfig:
 	$(MAKE) $(MAKEARGS) $(DEFCONFIG) defconfig
-	$(MAKE) $(MAKEARGS) $(ALT_DEFCONFIG) savedefconfig
 
 # generate from a defconfig then save as current configuration
 %_defconfig:

@@ -6,9 +6,6 @@
 #include "winglet-ui/widget/scrollablemenu.h"
 #include "winglet-ui/widget/statusbar.h"
 
-#define RELEASE_NOTES_FLAG_FILE "/var/show_release_notes"
-#define RELEASE_NOTES_LOCATION "/etc/release_notes"
-
 namespace WingletUI {
 
 class MainMenu : public QWidget
@@ -28,6 +25,8 @@ protected slots:
     void menuItemSelected(QModelIndex index);
     void menuBeginningHide(unsigned int duration);
     void menuBeginningShow(unsigned int duration);
+    void colorPaletteChanged();
+    void canardConnectionChanged(bool connected);
 
 private:
     ScrollableMenu *menuWidget;
@@ -36,12 +35,11 @@ private:
     QPropertyAnimation *statusBarOpacityAnimation;
     QLabel *avLogoLabel;
 
-    bool tryShowReleaseNotes();
-
     enum MenuActionState {
         ACTION_STATE_FIRST_START,
         ACTION_STATE_RELEASE_NOTES_DONE,
-        ACTION_STATE_RETURN
+        ACTION_STATE_RETURN,
+        ACTION_STATE_GAMEBOY_START
     };
 
     MenuActionState actionState = ACTION_STATE_FIRST_START;

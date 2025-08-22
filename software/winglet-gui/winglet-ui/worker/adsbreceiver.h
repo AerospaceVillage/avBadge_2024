@@ -1,9 +1,11 @@
 #ifndef WINGLETUI_ADSBRECEIVER_H
 #define WINGLETUI_ADSBRECEIVER_H
 
+#include "winglet-ui/worker/gpsreceiver.h"
 #include "abstractsocketworker.h"
 #include <QDateTime>
 #include <QMutex>
+#include <cmath>
 
 namespace WingletUI {
 
@@ -20,6 +22,9 @@ struct Aircraft {
     int gndSpeed = 0;           /* Ground Speed */
     float planeTrack = 0;
     bool isOnGround = false;
+
+    float distance = nanf("");  // Initializes distnace as a quiet NaN       // Have distance calculate on receipt of message (vice every paint)
+    float bearing = nanf("");   // Initialize bearing as a quiet NaN
 
     bool callSignValid = false;
     bool altValid = false;
@@ -47,6 +52,8 @@ signals:
 protected:
     void handleConnectionEvent(bool connected) override;
     void handleLine(const QString &line) override;
+    float distanceEarth(double lat2d, double lon2d);
+    float get_bearing(float lat, float lon);
 
 private slots:
     void clearStalePlanesCallback();
@@ -57,6 +64,7 @@ private:
     QMutex state_mutex;
     QMap<quint32, Aircraft> m_airspace;
     QTimer *timer;
+    GPSReading currentGPS;
 };
 
 } // namespace WingletUI

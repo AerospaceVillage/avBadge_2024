@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QParallelAnimationGroup>
+#include <unistd.h>
 
 namespace Ui {
 class Credits;

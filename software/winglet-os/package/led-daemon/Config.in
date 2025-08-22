@@ -1,0 +1,6 @@
+config BR2_PACKAGE_LED_DAEMON
+	bool "led-daemon"
+	help
+		Winglet LED daemon
+
+		https://www.aerospacevillage.org

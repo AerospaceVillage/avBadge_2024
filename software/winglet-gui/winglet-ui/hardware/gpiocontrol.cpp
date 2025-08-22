@@ -71,7 +71,7 @@ GPIOControl::GPIOControl(QObject *parent)
 
     saoI2CPullEnLine = gpiod_chip_get_line(gpioChip, LINE_SAO_I2C_PULL_EN);
     if (saoI2CPullEnLine) {
-        bool saoI2CPullLvl = settings->saoI2CPullEn() && settings->saoPowerEn();
+        bool saoI2CPullLvl = !settings->saoI2CPullEn() || !settings->saoPowerEn();
         if (!gpiod_line_request_output(saoI2CPullEnLine, CONSUMER, saoI2CPullLvl)) {
             connect(settings, SIGNAL(saoI2CPullEnChanged(bool)), this, SLOT(saoI2CPullEnChanged(bool)));
         }
@@ -118,7 +118,7 @@ void GPIOControl::saoPowerEnChanged(bool powerEn) {
         return;
 
     // Same as for i2c pull changed, can only have pull when power is enabled
-    bool saoI2CPullLvl = settings->saoI2CPullEn() && powerEn;
+    bool saoI2CPullLvl = !settings->saoI2CPullEn() || !powerEn;
 
     if (gpiod_line_set_value(saoI2CPullEnLine, saoI2CPullLvl)) {
         qWarning("Failed to set SAO I2C Pull Enable: %d", errno);
@@ -131,7 +131,7 @@ void GPIOControl::saoI2CPullEnChanged(bool pullEn) {
 
     // Note pull up enable is inverted from the value (false enables pull ups)
     // SAO Pull Enable can only work if both SAO power enable is true and I2C pull is true (or else we'll get leakage)
-    bool saoI2CPullLvl = pullEn && settings->saoPowerEn();
+    bool saoI2CPullLvl = !pullEn || !settings->saoPowerEn();
 
     if (gpiod_line_set_value(saoI2CPullEnLine, saoI2CPullLvl)) {
         qWarning("Failed to set SAO I2C Pull Enable: %d", errno);

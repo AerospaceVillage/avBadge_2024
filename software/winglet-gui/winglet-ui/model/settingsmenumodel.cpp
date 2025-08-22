@@ -58,7 +58,13 @@ QVariant SettingsMenuModel::data(const QModelIndex &index, int role) const
         else if (role == Qt::CheckStateRole) {
             // Check state can be returned for boolean items
             if (auto boolSetting = dynamic_cast<AbstractBoolSetting*>(node)) {
-                return boolSetting->value() ? Qt::Checked : Qt::Unchecked;
+                int val = boolSetting->value();
+                if (val > 0)
+                    return Qt::Checked;
+                else if (val == 0)
+                    return Qt::Unchecked;
+                else
+                    return Qt::PartiallyChecked;
             }
             else {
                 return {};
@@ -73,7 +79,11 @@ QVariant SettingsMenuModel::data(const QModelIndex &index, int role) const
                 return listSetting->curValueName();
             }
             else if (auto textSetting = dynamic_cast<AbstractTextSetting*>(node)) {
-                return textSetting->value();
+                QString val = textSetting->displayValue();
+                if (val.size() > 0)
+                    return val;
+                else
+                    return {};
             }
             else {
                 return {};
@@ -134,7 +144,7 @@ bool SettingsMenuModel::setData(const QModelIndex &index, const QVariant &value,
 
 Qt::ItemFlags SettingsMenuModel::flags(const QModelIndex &index) const
 {
-    Qt::ItemFlags flags = Qt::ItemIsEnabled;
+    Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
     if (index.isValid()) {
         AbstractSettingsEntry* node = (AbstractSettingsEntry*) index.internalPointer();

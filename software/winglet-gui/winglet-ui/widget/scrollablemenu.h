@@ -7,6 +7,7 @@
 #include <QParallelAnimationGroup>
 #include <QAbstractItemModel>
 
+#include "elidedlabel.h"
 #include "menuitemwidget.h"
 
 namespace WingletUI {
@@ -15,7 +16,7 @@ class ScrollableMenu : public QWidget
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex)
     Q_PROPERTY(QVariant currentData READ currentData)
     Q_PROPERTY(bool menuWrap READ menuWrap WRITE setMenuWrap)
     Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems)
@@ -38,6 +39,7 @@ public:
     int modelColumn() const { return m_modelColumn; }
     void setModelColumn(int visibleColumn);
     int currentIndex() const { return m_currentIndex.row(); }
+    QModelIndex currentEntry() const { return m_currentIndex; }
     QVariant currentData(int role = Qt::UserRole) const { return m_currentIndex.data(role); }
     int count() const { return m_model->rowCount(m_root); }
 
@@ -62,11 +64,11 @@ public slots:
     void goBack();
 
 signals:
-    void currentIndexChanged(int index);
     void itemSelected(QModelIndex index);
     void menuExit();
     void startingHideAnimation(unsigned int duration);
     void startingShowAnimation(unsigned int duration);
+
 
     /* Event Handling */
 protected:
@@ -74,6 +76,8 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+private slots:
+    void colorPaletteChanged();
 
 
     /* Animation Control */
@@ -104,6 +108,7 @@ private:
     // Model Update Slots
 private slots:
     void modelDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
+    void modelLayoutChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint);
 
 private:
     void enterMenu();
@@ -113,7 +118,7 @@ private:
     MenuItemWidget** menuItems;
     size_t menuItemsAllocCount;
     int m_numVisibleItems;
-    QLabel* title;
+    ElidedLabel* title;
     QLabel* selectionPtr;
 
     int m_titleFontSize;
@@ -127,8 +132,10 @@ private:
     // Icons (used if model item is marked as checkable)
     QPixmap checkedIcon;
     QPixmap uncheckedIcon;
+    QPixmap triCheckedIcon;
 
     // Functions for rerendering UI
+    void reloadIcons();       // Reloads all monochrom pixmap resources according to the active theme's color palette
     void regenerateLabels();  // Regenerates all labels based on rendering properties (should be called on UI property changes)
     void recomputeLabelText();  // Recomputes all of the text to appear in each label, should be called when index/text content changes
     void recomputeLabelPositioning();  // Recomputes the positioning of the labels, should be called when dimensions change

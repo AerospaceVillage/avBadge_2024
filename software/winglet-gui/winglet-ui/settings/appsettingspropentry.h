@@ -14,7 +14,7 @@ class AppSettingsBoolPropEntry : public AbstractBoolSetting
 public:
     AppSettingsBoolPropEntry(QObject *propOwner, const char* propName, QString displayName);
     void setValue(bool val) override;
-    bool value() const override;
+    int value() const override;
 
 protected slots:
     void settingUpdated(bool newVal);

@@ -3,7 +3,6 @@
 
 #include <QWidget>
 #include <QLabel>
-
 namespace WingletUI {
 
 class SimpleMediaPlayer : public QWidget

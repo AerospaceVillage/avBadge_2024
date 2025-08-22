@@ -89,7 +89,22 @@
 #define SUNXI_HSIC_CONNECT_INT		BIT(16)
 #define SUNXI_HSIC			BIT(1)
 
+/* New Control Bits for "V3" (Allwinner In-House) PHY */
+#define PHY3_TEST_TEST		0x00
+
+/* SID Register Definitions */
+#define PHY3_SID_BASE		0x03006200
+#define PHY3_SID_OFFSET		0x18
+#define PHY3_SID_ADJUST_MASK	0x10000
+#define PHY3_SID_MODE_MASK	0x20000
+#define PHY3_SID_RES_MASK	0x3C0000
+#define PHY3_SID_COM_MASK	0x1C00000
+#define PHY3_SID_USB0TX_MASK	0x1C00000
+#define PHY3_SID_USB1TX_MASK	0xE000000
+
 #define MAX_PHYS			4
+
+#define SUNXI_USBPHY_DBGLOG 0
 
 /*
  * Note do not raise the debounce time, we must report Vusb high within 100ms
@@ -109,6 +124,7 @@ struct sun4i_usb_phy_cfg {
 	bool needs_phy2_siddq;
 	bool siddq_in_base;
 	bool poll_vbusen;
+	bool is_v3_phy;
 	int missing_phys;
 };
 
@@ -229,6 +245,194 @@ static void sun4i_usb_phy_write(struct sun4i_usb_phy *phy, u32 addr, u32 data,
 	spin_unlock_irqrestore(&phy_data->reg_lock, flags);
 }
 
+static void sun4i_usb_new_phy_write(struct sun4i_usb_phy *phy, u32 addr, u32 data,
+				int len)
+{
+	struct sun4i_usb_phy_data *phy_data = to_sun4i_usb_phy_data(phy);
+	u32 temp, dtmp;
+	void __iomem *phyctl = phy_data->base + phy_data->cfg->phyctl_offset;
+	unsigned long flags;
+	int i;
+
+	spin_lock_irqsave(&phy_data->reg_lock, flags);
+
+	dtmp = data;
+	for (i = 0; i < len; i++) {
+		/* Set PHY_CTL[1] (VC_EN) =1 -> "enable PHY VC bus" */
+		temp = readb(phyctl);
+		temp |= BIT(1);
+		writeb(temp, phyctl);
+
+		/* Set PHY_CTL[15:8] (VC_ADDR) to current bit address i */
+		writeb(addr + i, phyctl + 1);
+
+		/* Strobe VC clk (bit 0) and DI latch (bit 7) */
+		temp = readb(phyctl);
+		temp &= ~BIT(0);
+		writeb(temp, phyctl);
+
+		temp = readb(phyctl);
+		temp &= ~BIT(7);
+		temp |= (dtmp & 0x1) << 7;
+		writeb(temp, phyctl);
+
+		temp |= BIT(0);
+		writeb(temp, phyctl);
+
+		temp &= ~BIT(0);
+		writeb(temp, phyctl);
+
+		/* Deassert VC_EN */
+		temp = readb(phyctl);
+		temp &= ~BIT(1);
+		writeb(temp, phyctl);
+
+		dtmp >>= 1;
+	}
+
+	spin_unlock_irqrestore(&phy_data->reg_lock, flags);
+}
+
+static int sun4i_usb_new_phy_read(struct sun4i_usb_phy *phy, u32 addr, int len)
+{
+	struct sun4i_usb_phy_data *phy_data = to_sun4i_usb_phy_data(phy);
+	u32 temp;
+	int dtmp;
+	void __iomem *phyctl = phy_data->base + phy_data->cfg->phyctl_offset;
+	unsigned long flags;
+	int i;
+	volatile int j;
+
+	spin_lock_irqsave(&phy_data->reg_lock, flags);
+
+	dtmp = 0;
+
+	/* Enable VC */
+	temp = readb(phyctl);
+	temp |= BIT(1);
+	writeb(temp, phyctl);
+
+	for (i = len; i > 0; i--) {
+		/* Set addr */
+		writeb((addr + i - 1), phyctl + 1);
+
+		/* Ref AW code does this as a delay... */
+		for (j = 0; j < 0x4; j++) {}
+
+		/* Readback VC_DO bit from PHY_STA (+0x424 !) */
+		temp = readb(phyctl + 0x14);
+		dtmp = (dtmp << 1) | (temp & 0x1);
+	}
+
+	/* Disable VC */
+	temp = readb(phyctl);
+	temp &= ~BIT(1);
+	writeb(temp, phyctl);
+
+	spin_unlock_irqrestore(&phy_data->reg_lock, flags);
+	return dtmp;
+}
+
+static void sun4i_usb_new_phy_init(struct sun4i_usb_phy *phy)
+{
+	void __iomem *efuse;
+	u32 temp;
+	u32 efuse_val = 0;
+
+#ifdef SUNXI_USBPHY_DBGLOG
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x03, 0x06, sun4i_usb_new_phy_read(phy, 0x03, 0x06));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x16, 0x03, sun4i_usb_new_phy_read(phy, 0x16, 0x03));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x0b, 0x08, sun4i_usb_new_phy_read(phy, 0x0b, 0x08));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x09, 0x03, sun4i_usb_new_phy_read(phy, 0x09, 0x03));
+#endif
+
+	/* Access SID (needed for fuses) */
+	efuse = ioremap(PHY3_SID_BASE, 0x100);
+	if (!efuse) {
+		pr_err("%s: ERROR could not ioremap USB EFUSE\n", __func__);
+		return;
+	}
+	efuse_val = readl(efuse + PHY3_SID_OFFSET);
+#ifdef SUNXI_USBPHY_DBGLOG
+	pr_info("%s: mapped EFUSE SID 0x%08X -> 0x%08X\n",
+		__func__, PHY3_SID_BASE, (u32)efuse);
+	pr_info("%s: read USB EFUSE 0x%08X\n", __func__, efuse_val);
+#endif
+	iounmap(efuse);
+
+	sun4i_usb_new_phy_write(phy, 0x1c, 0x00, 0x03);
+#ifdef SUNXI_USBPHY_DBGLOG
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x1c, 0x03, sun4i_usb_new_phy_read(phy, 0x1c, 0x03));
+#endif
+
+	if (efuse_val & PHY3_SID_ADJUST_MASK) {
+		if (efuse_val & PHY3_SID_MODE_MASK) {
+			/* XXX: "iref mode" */
+			sun4i_usb_new_phy_write(phy, 0x60, 0x01, 0x01);
+
+			/* TODO: handle PHY1 too*/
+			temp = (efuse_val & PHY3_SID_USB0TX_MASK) >> 22;
+			sun4i_usb_new_phy_write(phy, 0x61, temp, 0x03);
+
+			temp = (efuse_val & PHY3_SID_RES_MASK) >> 18;
+			sun4i_usb_new_phy_write(phy, 0x44, temp, 0x04);
+
+#ifdef SUNXI_USBPHY_DBGLOG
+			pr_info("%s: PHYv3 fused adjust iref mode\n", __func__);
+			pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+				__func__, 0x61, 0x03, sun4i_usb_new_phy_read(phy, 0x61, 0x03));
+			pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+				__func__, 0x44, 0x04, sun4i_usb_new_phy_read(phy, 0x44, 0x04));
+#endif
+		} else {
+			/* XXX: "vref mode" */
+			sun4i_usb_new_phy_write(phy, 0x60, 0x00, 0x01);
+
+			temp = (efuse_val & PHY3_SID_RES_MASK) >> 18;
+			sun4i_usb_new_phy_write(phy, 0x44, temp, 0x04);
+
+			temp = (efuse_val & PHY3_SID_COM_MASK) >> 22;
+			sun4i_usb_new_phy_write(phy, 0x36, temp, 0x03);
+
+#ifdef SUNXI_USBPHY_DBGLOG
+			pr_info("%s: PHYv3 fused adjust vref mode\n", __func__);
+			pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+				__func__, 0x60, 0x01, sun4i_usb_new_phy_read(phy, 0x60, 0x01));
+			pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+				__func__, 0x44, 0x04, sun4i_usb_new_phy_read(phy, 0x44, 0x04));
+			pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+				__func__, 0x36, 0x03, sun4i_usb_new_phy_read(phy, 0x36, 0x03));
+#endif
+		}
+	}
+#ifdef SUNXI_USBPHY_DBGLOG
+	else {
+		pr_info("%s: NOTE skipping PHYv3 adjust due to EFUSE value\n",
+			__func__);
+	}
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x03, 0x06, sun4i_usb_new_phy_read(phy, 0x03, 0x06));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x16, 0x03, sun4i_usb_new_phy_read(phy, 0x16, 0x03));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x0b, 0x08, sun4i_usb_new_phy_read(phy, 0x0b, 0x08));
+
+	pr_info("%s: PHYv3 addr: 0x%02x, len: %d, val: 0x%02x\n",
+		__func__, 0x09, 0x03, sun4i_usb_new_phy_read(phy, 0x09, 0x03));
+#endif
+}
+
 static void sun4i_usb_phy_passby(struct sun4i_usb_phy *phy, int enable)
 {
 	struct sun4i_usb_phy_data *phy_data = to_sun4i_usb_phy_data(phy);
@@ -254,6 +458,28 @@ static void sun4i_usb_phy_passby(struct sun4i_usb_phy *phy, int enable)
 		reg_value &= ~bits;
 
 	writel(reg_value, phy->pmu);
+
+	if (phy_data->cfg->is_v3_phy) {
+#ifdef SUNXI_USBPHY_DBGLOG
+		pr_info("%s: v3-phy passby %s\n", __func__, enable ? "enabling" : "disabling");
+#endif
+		u32 hci_ctl_val = readl(phy->pmu + REG_HCI_PHY_CTL);
+
+#ifdef SUNXI_USBPHY_DBGLOG
+		pr_info("%s: HCI PHY_CTL prev value: 0x%08X\n", __func__, hci_ctl_val);
+#endif
+		if (enable) {
+			/* SIDDQ Write 0 to enable PHY */
+			hci_ctl_val &= ~BIT(3);
+		} else {
+			hci_ctl_val |= BIT(3);
+		}
+
+#ifdef SUNXI_USBPHY_DBGLOG
+		pr_info("%s: HCI PHY_CTL new value: 0x%08X\n", __func__, hci_ctl_val);
+#endif
+		writel(hci_ctl_val, phy->pmu + REG_HCI_PHY_CTL);
+	}
 }
 
 static int sun4i_usb_phy_init(struct phy *_phy)
@@ -278,6 +504,12 @@ static int sun4i_usb_phy_init(struct phy *_phy)
 		clk_disable_unprepare(phy->clk2);
 		clk_disable_unprepare(phy->clk);
 		return ret;
+	}
+
+	if (data->cfg->is_v3_phy) {
+#ifdef SUNXI_USBPHY_DBGLOG
+	pr_info("%s: PHY is v3 type! (winglet T113-S3)\n", __func__);
+#endif
 	}
 
 	/* Some PHYs on some SoCs need the help of PHY2 to work. */
@@ -336,6 +568,21 @@ static int sun4i_usb_phy_init(struct phy *_phy)
 			val |= PHY_CTL_VBUSVLDEXT;
 			val &= ~PHY_CTL_SIDDQ;
 			writel(val, data->base + data->cfg->phyctl_offset);
+		}
+	} else if (data->cfg->is_v3_phy) {
+		if (phy->index == 0) {
+			/* Do new init sequence from EFUSE for V3 in-house PHY */
+			val = readl(data->base + data->cfg->phyctl_offset);
+			val &= ~PHY_CTL_SIDDQ;	/* Write 0 to enable PHY */
+			writel(val, data->base + data->cfg->phyctl_offset);
+
+			sun4i_usb_new_phy_init(phy);
+		} else {
+			/* TODO: Add support for PHY1: AW code and EFUSE does both iirc */
+#ifdef SUNXI_USBPHY_DBGLOG
+			pr_info("%s: TODO new PHYv3 init() for PHY[%d != 0]\n",
+				__func__, phy->index);
+#endif
 		}
 	} else {
 		/* Enable USB 45 Ohm resistor calibration */
@@ -415,6 +662,10 @@ static int sun4i_usb_phy0_get_axp2585_id_det(struct sun4i_usb_phy_data *data)
 	}
 
 	// Convert host/peripheral detect to an id pin level
+#ifdef SUNXI_USBPHY_DBGLOG
+	pr_info("%s: BMU setting USB PHY type %s\n",
+		__func__, (mode == AXP2585_ID_HOST) ? "AXP2585_ID_HOST" : "AXP2585_TYPE_PERIPHERAL");
+#endif
 	if (mode == AXP2585_ID_HOST) {
 		return 0;
 	}
@@ -576,8 +827,14 @@ static int sun4i_usb_phy_set_mode(struct phy *_phy,
 void sun4i_usb_phy_set_squelch_detect(struct phy *_phy, bool enabled)
 {
 	struct sun4i_usb_phy *phy = phy_get_drvdata(_phy);
+	struct sun4i_usb_phy_data *data = to_sun4i_usb_phy_data(phy);
 
-	sun4i_usb_phy_write(phy, PHY_SQUELCH_DETECT, enabled ? 0 : 2, 2);
+	if (data->cfg->is_v3_phy) {
+		pr_err("%s: ERROR tried to set squelch detect on v3 PHY[%d]\n",
+			__func__, phy->index);
+	} else {
+		sun4i_usb_phy_write(phy, PHY_SQUELCH_DETECT, enabled ? 0 : 2, 2);
+	}
 }
 EXPORT_SYMBOL_GPL(sun4i_usb_phy_set_squelch_detect);
 
@@ -1040,6 +1297,15 @@ static const struct sun4i_usb_phy_cfg sun8i_v3s_cfg = {
 	.phy0_dual_route = true,
 };
 
+static const struct sun4i_usb_phy_cfg sun8i_t113s_cfg = {
+	.num_phys = 2,
+	.phyctl_offset = REG_PHYCTL_A33,
+	.dedicated_clocks = true,
+	.hci_phy_ctl_clear = PHY_CTL_SIDDQ,
+	.phy0_dual_route = true,
+	.is_v3_phy = true,
+};
+
 static const struct sun4i_usb_phy_cfg sun20i_d1_cfg = {
 	.num_phys = 2,
 	.phyctl_offset = REG_PHYCTL_A33,
@@ -1089,6 +1355,7 @@ static const struct of_device_id sun4i_usb_phy_of_match[] = {
 	{ .compatible = "allwinner,sun8i-h3-usb-phy", .data = &sun8i_h3_cfg },
 	{ .compatible = "allwinner,sun8i-r40-usb-phy", .data = &sun8i_r40_cfg },
 	{ .compatible = "allwinner,sun8i-v3s-usb-phy", .data = &sun8i_v3s_cfg },
+	{ .compatible = "allwinner,sun8i-t113s-usb-phy", .data = &sun8i_t113s_cfg },
 	{ .compatible = "allwinner,sun20i-d1-usb-phy", .data = &sun20i_d1_cfg },
 	{ .compatible = "allwinner,sun50i-a64-usb-phy",
 	  .data = &sun50i_a64_cfg},

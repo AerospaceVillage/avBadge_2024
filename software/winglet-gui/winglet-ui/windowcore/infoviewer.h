@@ -1,6 +1,7 @@
 #ifndef INFOVIEWER_H
 #define INFOVIEWER_H
 
+#include <QLabel>
 #include <QWidget>
 #include "winglet-ui/worker/gpsreceiver.h"
 
@@ -17,6 +18,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private:
+    QLabel* avLogoLabel;
     QString labels[4] = {
         "OS Name", "OS Version", "Build Type", "Device Model"
     };

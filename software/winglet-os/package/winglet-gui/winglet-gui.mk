@@ -3,7 +3,7 @@
 # winglet-gui
 #
 #############################################################
-WINGLET_GUI_VERSION = ab84a7643f6cebae0e2101fcefc71834825eb877
+WINGLET_GUI_VERSION = 4316b12244350f9072c4e9ec9bdf23df1cda118f
 WINGLET_GUI_SITE_METHOD = git
 WINGLET_GUI_SITE = git@github.com:AerospaceVillage/winglet-gui.git
 

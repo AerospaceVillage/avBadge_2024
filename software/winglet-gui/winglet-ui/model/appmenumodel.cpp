@@ -71,7 +71,14 @@ QModelIndex AppMenuModel::index(int row, int column, const QModelIndex &parent) 
         // Not a submenu, can't get children
         return {};
     }
-    if (row < 0 || ((size_t) row) >= node->numChildren) {
+
+    int numVisibleChildren = node->numChildren;
+    if (lastMainEntryDisabled && !parent.isValid()) {
+        // Removes an item from the array if last item disabled
+        numVisibleChildren--;
+    }
+
+    if (row < 0 || row >= numVisibleChildren) {
         // Row not inside submenu list
         return {};
     }
@@ -107,7 +114,12 @@ int AppMenuModel::rowCount(const QModelIndex &parent) const
 
     if (node->submenu) {
         // If submenu defined, its a menu and return number of children
-        return node->numChildren;
+        int numVisibleChildren = node->numChildren;
+        if (lastMainEntryDisabled && !parent.isValid()) {
+            // Removes an item from the array if last item disabled
+            numVisibleChildren--;
+        }
+        return numVisibleChildren;
     }
     else {
         // If not it's a menu entry, return no children
@@ -124,7 +136,31 @@ int AppMenuModel::columnCount(const QModelIndex &parent) const
 Qt::ItemFlags AppMenuModel::flags(const QModelIndex &index) const
 {
     (void) index;
-    return Qt::ItemIsEnabled;
+    return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+}
+
+void AppMenuModel::disableLastMainEntry(bool disableEntry) {
+    if (lastMainEntryDisabled == disableEntry) {
+        return;
+    }
+
+    // 1. Prepare for scan results refresh
+    emit layoutAboutToBeChanged();
+
+    // 2. Save previous state so we can update the persistent indices
+    QModelIndex prevLastEntry = index(menuRoot->numChildren - 1, 0);
+
+    // 3. Modify Model State
+    lastMainEntryDisabled = disableEntry;
+
+    // 4. Update the persistent model indices
+    if (disableEntry) {
+        // Only needs update if we're removing the last entry
+        changePersistentIndex(prevLastEntry, {});
+    }
+
+    // 5. Notify of layout changed
+    emit layoutChanged();
 }
 
 } // namespace WingletUI

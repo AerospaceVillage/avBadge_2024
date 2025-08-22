@@ -13,7 +13,7 @@ class SettingsMenu : public QWidget
 {
     Q_OBJECT
 public:
-    explicit SettingsMenu(QWidget *parent = nullptr);
+    explicit SettingsMenu(QWidget *parent = nullptr, bool isCanardSettings = false);
 
 protected:
     void focusInEvent(QFocusEvent* ev) override;
@@ -22,8 +22,13 @@ protected:
 protected slots:
     void menuItemSelected(QModelIndex index);
     void menuExitRequested();
+    void menuExitConfirmClicked(int btnIdx);
     void selectorIndexSelected(QModelIndex index);
     void cicularKbdTextEntered(QString val);
+    void colorPaletteChanged();
+    void msgboxBtnClicked(int btnIdx);
+
+    void canardConnectionChanged(bool connected);
 
 private:
     enum SettingsActionState {
@@ -35,9 +40,15 @@ private:
         ACTION_STATE_TEXT_RETURN,
         ACTION_STATE_WIFI_SSID_RETURN,
         ACTION_STATE_WIFI_PSK_RETURN,
+        ACTION_STATE_WIFI_SCAN_RETURN,
         ACTION_STATE_MSGBOX_RETURN,
         ACTION_STATE_MANAGE_NETWORKS_RETURN,
-        ACTION_STATE_INFO_RETURN
+        ACTION_STATE_INFO_RETURN,
+        ACTION_STATE_RESET_ROOT_PASSWORD_CONFIRM,
+        ACTION_STATE_COLD_BOOT_GPS_CONFIRM,
+        ACTION_STATE_MENU_CLOSE,
+        ACTION_STATE_SHOW_INVALID_CANARD_SETTINGS,
+        ACTION_STATE_SHOW_CANARD_SETTINGS_SAVE_FAIL,
     };
 
     SettingsActionState actionState = ACTION_STATE_MENU_OPEN;
@@ -49,6 +60,9 @@ private:
 
     AbstractSettingsEntry *activeItem;
     QString enteredWifiSSID;
+    bool wifiScanAskPsk;
+    int selectedMsgboxBtnIdx;
+    bool isCanardSettings;
 };
 
 } // namespace WingletUI

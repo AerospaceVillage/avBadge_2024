@@ -1,6 +1,5 @@
 #include "credits.h"
 #include "ui_credits.h"
-#include "rgbleds.h"
 #include <QKeyEvent>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
@@ -80,7 +79,7 @@ void Credits::showEvent(QShowEvent *ev)
 void Credits::hideEvent(QHideEvent *ev)
 {
     (void) ev;
-    rgbled_clear();
+    WingletGUI::inst->ledControl->clearRing();
 }
 
 void Credits::animationGroupFinished()
@@ -99,13 +98,8 @@ void Credits::animationGroupFinished()
 
 void Credits::setLeds()
 {
-    rgb incolor;
-    incolor.r = .5;
-    incolor.g = .5;
-    incolor.b = .5;
-
-    for(int ledN = 0; ledN < LED_COUNT; ledN++){
-        rgbled_set(ledN, incolor);
+    for(int ledN = 0; ledN < WingletGUI::inst->ledControl->LED_COUNT; ledN++){
+        WingletGUI::inst->ledControl->setRingLed(ledN, 255,255,255);
     }
 }
 

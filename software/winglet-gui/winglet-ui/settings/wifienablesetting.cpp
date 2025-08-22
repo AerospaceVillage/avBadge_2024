@@ -16,6 +16,7 @@ void WifiEnableSetting::reportMonitorReady() {
 
     connect(WingletGUI::inst->wifiMon, SIGNAL(wifiStateChanged(int, int)), this, SLOT(wifiStateChanged(int, int)));
     cachedWifiOnVal = WingletGUI::inst->wifiMon->wifiState() != WifiMonitor::WIFI_OFF;
+    waitingForStateChange = false;
     reportChanged();
 
     // Try lowering the interface on startup if we are requested to start disabled
@@ -31,14 +32,18 @@ void WifiEnableSetting::wifiStateChanged(int state, int wifiStrength) {
     bool lastWifiWasOn = cachedWifiOnVal;
     cachedWifiOnVal = wifiIsOn;
 
-    if (wifiIsOn != lastWifiWasOn) {
+    if (wifiIsOn != lastWifiWasOn || waitingForStateChange) {
+        waitingForStateChange = false;
         reportChanged();
     }
 }
 
-bool WifiEnableSetting::value() const {
+int WifiEnableSetting::value() const {
     if (!monitorReady)
         return cachedWifiOnVal;
+
+    if (waitingForStateChange)
+        return -1;
 
     return WingletGUI::inst->wifiMon->wifiState() != WifiMonitor::WIFI_OFF;
 }
@@ -55,6 +60,8 @@ void WifiEnableSetting::setValue(bool value) {
         WingletGUI::inst->wifiMon->lowerInterface();
         WingletGUI::inst->settings.setWifiStartDisabled(true);
     }
+    waitingForStateChange = true;
+    reportChanged();
 }
 
 } // namespace WingletUI

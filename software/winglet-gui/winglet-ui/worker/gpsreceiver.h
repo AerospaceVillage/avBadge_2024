@@ -22,15 +22,52 @@ struct GPSReading {
     bool operator!=(const GPSReading& rhs) const {return !operator==(rhs);}
 };
 
+struct Satellite {
+    // From --GSV, both GPS and Beidou
+    int numSatField = 0;
+    qint32  svid = 0;
+    int     elev = 0;
+    int     azim = 0;
+    int     cno = 0;
+    QDateTime timestamp;
+};
+
+// Right now this *should* be acting the same as GPSReading. Not sure why it consistently
+
+struct GPSConstellation {
+    GPSConstellation(): satsTracked(0), msl(0), posStatus(0), pdop(0), hdop(0), vdop(0) {}
+    //GPSConstellation(const QStringList &nmeaFields);
+
+    QMap<quint32, Satellite> m_ephemeris;
+
+    // From GGA
+    int     satsTracked = 0;
+    float   msl = 0;
+
+    // From GSA
+    int     posStatus = 0;
+    float   pdop = 0;
+    float   hdop = 0;
+    float   vdop = 0;
+}; 
+
 class GPSReceiver : public WingletUI::AbstractSocketWorker
 {
     Q_OBJECT
 public:
     enum GPSState { GPS_DISCONNECTED, GPS_NO_LOCK, GPS_LOCKED };
+    enum PosState { POS_UNKNOWN, POS_INVALID, POS_2D, POS_3D };
+    Q_ENUM(PosState) // Enables meta-object system support for MyEnum
 
     GPSReceiver(QThread *ownerThread);
     GPSReading lastReading();
     GPSState state() { return m_state; }
+    QMap<quint32, Satellite> getEphemeris();
+    GPSConstellation getConstellation();
+
+    void updateGPSConstellation(const QStringList &nmeaFields);
+
+
 
 signals:
     void gpsUpdated(WingletUI::GPSReading state);
@@ -40,10 +77,18 @@ protected:
     void handleConnectionEvent(bool connected) override;
     void handleLine(const QString &line) override;
 
+private slots:
+    void clearStaleSatsCallback();
+
 private:
+    void clearStaleSatsUnderLock();
     QMutex state_mutex;
     GPSState m_state = GPS_DISCONNECTED;
     GPSReading m_reading;
+
+    QTimer *timer;
+    GPSConstellation m_constellation;
+
 };
 
 } // namespace WingletUI

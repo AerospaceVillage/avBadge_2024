@@ -25,6 +25,8 @@ private slots:
     void updateLocationState(int state);
     void updateAdsbState(bool on);
     void timeRefreshCallback();
+    void colorPaletteChanged();
+    void timeFormatChanged(bool fmt12hr);
 
 private:
     enum BattIcon {
@@ -33,6 +35,8 @@ private:
          BATT_DSG_3BAR, BATT_DSG_4BAR, BATT_DSG_5BAR, BATT_DSG_6BAR, BATT_DSG_FULL, BATT_UNKNOWN
     };
     void setBattIcon(BattIcon icon);
+    void reloadPixmaps();
+    void forceRefreshIcons();
 
     QLabel *dateTimeLabel;
     QLabel *batteryIcon;

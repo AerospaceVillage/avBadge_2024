@@ -10,6 +10,7 @@
 namespace WingletUI {
 
 const static int selectionPtrXPos = 25;
+const static int maxEntryWidth = 160;
 
 ScrollableMenu::ScrollableMenu(QWidget *parent)
     : QWidget{parent},
@@ -18,17 +19,18 @@ ScrollableMenu::ScrollableMenu(QWidget *parent)
       menuItems(NULL), menuItemsAllocCount(0), m_numVisibleItems(5),
       m_titleFontSize(26), m_selectedFontSize(22), m_fontDecreaseRate(5),
       m_menuShouldWrap(false), m_canExitFromMenu(true), m_showShrinkFromOutside(false),
-      m_shrinkOnSelect(false),
-
-      checkedIcon(":/icons/settings/checkbox_true.png"),
-      uncheckedIcon(":/icons/settings/checkbox_false.png")
+      m_shrinkOnSelect(false)
 {
+
+    // Dynamic Icon loading based on color palette (and signal to reload when theme changes)
+    reloadIcons();
+    connect(activeTheme, SIGNAL(colorPaletteChanged()), this, SLOT(colorPaletteChanged()));
 
     const int selectionCaretFontSize = 26;
 
     // Create title
-    title = new QLabel(this);
-    title->setWordWrap(true);
+    title = new ElidedLabel(this);
+    title->setMultiline(true);
     title->setAlignment(Qt::AlignCenter);
     title->setForegroundRole(QPalette::Text);
     title->resize(175, 100);
@@ -123,6 +125,11 @@ void ScrollableMenu::showEvent(QShowEvent *event)
     showAnimation(true, showShrinkFromOutside());
 }
 
+void ScrollableMenu::colorPaletteChanged() {
+    reloadIcons();
+    regenerateLabels();
+}
+
 // ========================================
 // Movement Animation
 // ========================================
@@ -161,6 +168,11 @@ void ScrollableMenu::animationGroupFinished() {
 void ScrollableMenu::moveUp() {
     if (animationState != ANIMATE_NONE && animationState != ANIMATE_UP) {
         // Only allow interrupting animation in the same direction (if not it causes weird visual glitches)
+        return;
+    }
+
+    if (!(m_model->flags(m_currentIndex) & Qt::ItemIsEnabled) && count() == 1) {
+        // If only 1 item and it's disabled, don't animate the scroll jiggle as it makes it seem like you can interact with the item
         return;
     }
 
@@ -275,6 +287,11 @@ void ScrollableMenu::moveUpNow() {
 void ScrollableMenu::moveDown() {
     if (animationState != ANIMATE_NONE && animationState != ANIMATE_DOWN) {
         // Only allow interrupting animation in the same direction (if not it causes weird visual glitches)
+        return;
+    }
+
+    if (!(m_model->flags(m_currentIndex) & Qt::ItemIsEnabled) && count() == 1) {
+        // If only 1 item and it's disabled, don't animate the scroll jiggle as it makes it seem like you can interact with the item
         return;
     }
 
@@ -405,15 +422,21 @@ void ScrollableMenu::selectCurrentItem() {
         return;
     }
 
+    if (!(m_model->flags(m_currentIndex) & Qt::ItemIsEnabled)) {
+        // Don't do anything if not enabled
+        return;
+    }
+
     // If the item is a checkbox, then toggle the item check state rather than trying to navigate into it
     Qt::ItemFlags flags = m_model->flags(m_currentIndex);
     QVariant checkState = m_model->data(m_currentIndex, Qt::CheckStateRole);
     if ((flags & Qt::ItemIsUserCheckable) && !checkState.isNull()) {
-        if (flags & Qt::ItemIsEnabled) {
-            // If item is enabled, then toggle the checkbox when selected
-            Qt::CheckState newState = (checkState.value<Qt::CheckState>() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
-            m_model->setData(m_currentIndex, newState, Qt::CheckStateRole);
-            // TODO: Animate check state if this returns true
+        Qt::CheckState curState = checkState.value<Qt::CheckState>();
+        if (curState == Qt::Checked) {
+            m_model->setData(m_currentIndex, Qt::Unchecked, Qt::CheckStateRole);
+        }
+        else if (curState == Qt::Unchecked) {
+            m_model->setData(m_currentIndex, Qt::Checked, Qt::CheckStateRole);
         }
         return;
     }
@@ -615,6 +638,8 @@ void ScrollableMenu::setModel(QAbstractItemModel *model) {
         // Unsubscribe from all events
         disconnect(m_model, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QList<int>&)),
                    this, SLOT(modelDataChanged(const QModelIndex&, const QModelIndex&, const QList<int>&)));
+        disconnect(m_model, SIGNAL(layoutChanged(const QList<QPersistentModelIndex>&, QAbstractItemModel::LayoutChangeHint)),
+                this, SLOT(modelLayoutChanged(const QList<QPersistentModelIndex>&, QAbstractItemModel::LayoutChangeHint)));
 
         if (m_model->QObject::parent() == this) {
             delete m_model;
@@ -630,6 +655,8 @@ void ScrollableMenu::setModel(QAbstractItemModel *model) {
     // Connect all signals required for receiving updates
     connect(m_model, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)),
             this, SLOT(modelDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
+    connect(m_model, SIGNAL(layoutChanged(const QList<QPersistentModelIndex>&, QAbstractItemModel::LayoutChangeHint)),
+            this, SLOT(modelLayoutChanged(const QList<QPersistentModelIndex>&, QAbstractItemModel::LayoutChangeHint)));
 }
 
 void ScrollableMenu::setRootModelIndex(const QModelIndex &index) {
@@ -659,12 +686,12 @@ void ScrollableMenu::setCurrentIndex(int index) {
     QModelIndex mi = m_model->index(index, m_modelColumn, m_root);
     if (!mi.isValid()) {
         // Fallback to valid model index if none implemented
+        qWarning("ScrollableMenu::setCurrentIndex: Attempting to set out of bounds model index %d. Resetting to first element", index);
         mi = m_model->index(0, m_modelColumn, m_root);
     }
     if (mi != m_currentIndex) {
         m_currentIndex = QPersistentModelIndex(mi);
         recomputeLabelText();
-        emit currentIndexChanged(index);
     }
 }
 
@@ -702,6 +729,37 @@ void ScrollableMenu::modelDataChanged(const QModelIndex &topLeft, const QModelIn
     }
 
     recomputeLabelText();
+}
+
+void ScrollableMenu::modelLayoutChanged(const QList<QPersistentModelIndex> &parents, QAbstractItemModel::LayoutChangeHint hint) {
+    (void) hint;
+
+    if (parents.size() > 0 && m_root.isValid() && !parents.contains(m_root)) {
+        // If our root is not in the layout, don't refresh
+        return;
+    }
+
+    // Before performing any updates, we must fix up any persistent index variables that went invalid
+    if (!m_requestedRoot.isValid()) {
+        m_requestedRoot = QPersistentModelIndex();  // Not strictly necessary, but just sanitizes state
+    }
+    if (!m_root.isValid()) {
+        m_root = m_requestedRoot;
+    }
+    if (!m_currentIndex.isValid()) {
+        m_currentIndex = m_model->index(0, m_modelColumn, m_root);
+    }
+
+    // Skip redraw if we're currently animating or hidden, it'll redraw once the animation completes
+    if (isVisible() && animationState == ANIMATE_NONE) {
+        recomputeLabelText();
+    }
+}
+
+void ScrollableMenu::reloadIcons() {
+    activeTheme->loadMonochromeIcon(&checkedIcon, ":/icons/settings/checkbox_true.png");
+    activeTheme->loadMonochromeIcon(&uncheckedIcon, ":/icons/settings/checkbox_false.png");
+    activeTheme->loadMonochromeIcon(&triCheckedIcon, ":/icons/settings/checkbox_indeterminate.png");
 }
 
 void ScrollableMenu::regenerateLabels() {
@@ -746,6 +804,7 @@ void ScrollableMenu::regenerateLabels() {
     }
 
     for (int i = 0; i < m_numVisibleItems + 1; i++) {
+        menuItems[i]->setMaxContentsWidth(maxEntryWidth);
         menuItems[i]->setFontSize(getFontPointFromIdx(i));
 
         if (i == m_numVisibleItems) {
@@ -820,7 +879,10 @@ void ScrollableMenu::setItemFromRelIdx(MenuItemWidget* item, int relIdx) {
 
         QVariant checkState = m_model->data(idx, Qt::CheckStateRole);
         if (!checkState.isNull()) {
-            itemIcon = (checkState.value<Qt::CheckState>() == Qt::Checked) ? checkedIcon : uncheckedIcon;
+            auto checkEnum = checkState.value<Qt::CheckState>();
+            itemIcon = (checkEnum == Qt::Checked)          ? checkedIcon
+                     : (checkEnum == Qt::PartiallyChecked) ? triCheckedIcon
+                                                           : uncheckedIcon;
         }
         else {
             itemIcon = m_model->data(idx, Qt::DecorationRole).value<QPixmap>();

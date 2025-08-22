@@ -14,6 +14,7 @@ class Clock : public QWidget
 
 public:
     explicit Clock(QWidget *parent = nullptr);
+    ~Clock();
 
 protected:
     void showEvent(QShowEvent *ev) override;

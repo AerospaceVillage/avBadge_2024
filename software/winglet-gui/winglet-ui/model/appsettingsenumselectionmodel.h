@@ -11,7 +11,7 @@ class AppSettingsEnumSelectionModel : public QAbstractListModel
 public:
     explicit AppSettingsEnumSelectionModel(QObject *parent, QString title,
                                            const QVector<QPair<int, QString>>& valueMap):
-        QAbstractListModel{parent}, title(title), valueLookup(valueMap) {}
+        QAbstractListModel{parent}, title(title), valueLookup(valueMap), selectedValueIdx(-1) {}
 
     QModelIndex getIndexForPropVal(int val) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

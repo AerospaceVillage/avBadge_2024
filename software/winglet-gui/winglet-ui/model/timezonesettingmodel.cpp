@@ -36,7 +36,9 @@ public:
 
     TimeZoneOptionItem* createChildLeaf(const QByteArray &name, const QByteArray &tzId) {
         auto item = new TimeZoneOptionValue(this, name, tzId);
+        int idx = children.length();
         children.append(item);
+        childrenIdxMap.insert(name, idx);
         return item;
     }
 
@@ -109,6 +111,10 @@ TimeZoneSettingModel::TimeZoneSettingModel(QObject *parent)
             }
         }
     }
+}
+
+TimeZoneSettingModel::~TimeZoneSettingModel() {
+    delete rootOption;
 }
 
 QString TimeZoneSettingModel::tzIdToPath(const QString &tzId)

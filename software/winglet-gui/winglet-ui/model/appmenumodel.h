@@ -33,9 +33,14 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
+    // This is more of a hack to allow the Canard item to be added/removed
+    // But this is the only thing that needs to be changed and isn't worth rewriting this whole class
+    void disableLastMainEntry(bool disableEntry);
+
 private:
     const AppMenuItem* menuRoot;
     QHash<const AppMenuItem*, MenuMapLookup> *parentMap;  // Map for children items to parents
+    bool lastMainEntryDisabled = false;  // Hack to allow canard to be added/removed easily
 };
 
 } // namespace WingletUI

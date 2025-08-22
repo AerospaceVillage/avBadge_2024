@@ -17,8 +17,9 @@ enum ExitCode {
     EXIT_CODE_REGISTER_DISCORD = 45
 };
 
-class WingletTheme
+class WingletTheme: public QObject
 {
+    Q_OBJECT
 public:
     WingletTheme();
 
@@ -31,6 +32,26 @@ public:
 
     QPixmap avLogo;
     void renderBgAvLogo(QLabel *label);
+    void renderBgAvLogo(QLabel *label, bool doLower);
+    void loadMonochromeIcon(QPixmap* pixmap, const QString& fileSrc, QPalette::ColorRole colorRole = QPalette::WindowText);
+
+    QColor* radar_sweep_lines_color;
+    QColor* radar_sweep_cursor_color;
+    QColor* radar_sweep_cursor_color_inv;
+
+    QColor* oscope_line_color;
+
+    bool inDarkMode() { return m_inDarkMode; }
+
+public slots:
+    void setColorModePalette(bool darkMode);
+
+signals:
+    void colorPaletteChanged();
+
+private:
+    bool m_inDarkMode;
+
 };
 
 void initializeThemes();

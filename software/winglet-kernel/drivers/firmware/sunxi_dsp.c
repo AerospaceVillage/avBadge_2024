@@ -12,7 +12,6 @@
 
 #include <linux/clk.h>
 #include <linux/debugfs.h>
-#include <linux/dma-mapping.h>
 #include <linux/firmware.h>
 #include <linux/io.h>
 #include <linux/interrupt.h>
@@ -92,17 +91,7 @@ struct sunxi_dsp_inst {
 	mailbox_cb_t mbox_cb;
 	void *mbox_cb_arg;
 	bool enabled;
-
-	dma_addr_t sample_buf_dma_addr;
-	void *sample_buf;
 };
-
-void *sunxi_dsp_sample_buf_addr(struct platform_device *pdev)
-{
-	struct sunxi_dsp_inst *dsp = platform_get_drvdata(pdev);
-	return dsp->sample_buf;
-}
-EXPORT_SYMBOL_GPL(sunxi_dsp_sample_buf_addr);
 
 void __iomem *sunxi_dsp_lookup_localaddr(struct platform_device *pdev, u32 addr) {
 	struct sunxi_dsp_inst *dsp = platform_get_drvdata(pdev);
@@ -471,9 +460,6 @@ int sunxi_dsp_enable(const char *fw_name, struct platform_device *pdev,
 			     SUNXI_MSGBOX_READ_IRQ_ENABLE(SUNXI_MSGBOX_DSP));
 	sunxi_dsp_process_cpu_msgbox(pdev);
 
-	/* Finally good to start the processor */
-	sunxi_dsp_set_runstall(dsp, DSP_CTRL_RUN);
-
 	/* Request the Fatal Error IRQ */
 	ret = devm_request_irq(&pdev->dev, dsp->irq_pfe, &sunxi_dsp_pfe_irq, 0,
 			       "dsp_pfeirq", pdev);
@@ -491,43 +477,22 @@ int sunxi_dsp_enable(const char *fw_name, struct platform_device *pdev,
 		goto cleanup_pfe_irq;
 	}
 
-	/* Allocate the DMA buffer */
-	dsp->sample_buf = dma_alloc_coherent(&pdev->dev, SAMPLE_BUF_LEN,
-					     &dsp->sample_buf_dma_addr,
-					     GFP_KERNEL);
-	if (!dsp->sample_buf) {
-		dev_warn(&pdev->dev, "dma_alloc_coherent fail, size=0x%x\n",
-			 SAMPLE_BUF_LEN);
+	/* Assign the mailbox callbacks so caller receives all IRQ signals */
+	dsp->mbox_cb = cb;
+	dsp->mbox_cb_arg = cb_arg;
 
-		ret = -ENOMEM;
-		goto cleanup_msgbox_irq;
-	}
+	/* Finally good to start the processor */
+	sunxi_dsp_set_runstall(dsp, DSP_CTRL_RUN);
 
-	ret = sunxi_dsp_msgbox_send(pdev, 0, (u32)dsp->sample_buf_dma_addr);
-	if (ret) {
-		dev_warn(&pdev->dev, "failed to send DMA length\n");
-		goto cleanup_dma_alloc;
-	}
-
+	/* DSP has booted up. */
 	dev_info(&pdev->dev, "booting dsp (Speed: %d Hz, firmware: '%s')\n",
 		 dsp->dsp_speed, fw_name);
 
 	dsp->enabled = true;
-	dsp->mbox_cb = cb;
-	dsp->mbox_cb_arg = cb_arg;
 
 	release_firmware(fw);
 	mutex_unlock(&dsp->mtx);
 	return ret;
-
-cleanup_dma_alloc:
-	dma_free_coherent(&pdev->dev, SAMPLE_BUF_LEN, dsp->sample_buf,
-			  dsp->sample_buf_dma_addr);
-	dsp->sample_buf = NULL;
-	dsp->sample_buf_dma_addr = 0;
-
-cleanup_msgbox_irq:
-	devm_free_irq(&pdev->dev, dsp->irq_cpu_msgbox, pdev);
 
 cleanup_pfe_irq:
 	devm_free_irq(&pdev->dev, dsp->irq_pfe, pdev);
@@ -584,12 +549,19 @@ void sunxi_dsp_disable(struct platform_device *pdev)
 	}
 
 	dev_info(&pdev->dev, "Disabling DSP\n");
-	dsp->mbox_cb = NULL;
-	dsp->mbox_cb_arg = NULL;
 
+	/* Stop DSP Process */
+	sunxi_dsp_set_runstall(dsp, DSP_CTRL_STALL);
+
+	/* Disable all message box interrupts */
+	writel(0, dsp->reg_cpu_msgbox +
+		SUNXI_MSGBOX_READ_IRQ_ENABLE(SUNXI_MSGBOX_DSP));
+
+	/* Release all IRQs (disables via PIC) */
 	devm_free_irq(&pdev->dev, dsp->irq_cpu_msgbox, pdev);
 	devm_free_irq(&pdev->dev, dsp->irq_pfe, pdev);
 
+	/* Put all subsystems into reset */
 	ret = reset_control_assert(dsp->rst_dsp);
 	if (ret) {
 		dev_warn(&pdev->dev, "failed to reset dsp core: %d\n", ret);
@@ -619,24 +591,24 @@ void sunxi_dsp_disable(struct platform_device *pdev)
 			 "failed to reset dsp config peripheral: %d\n", ret);
 	}
 
+	/* Release all clocks */
 	clk_disable_unprepare(dsp->clk_dsp_msgbox);
 	clk_disable_unprepare(dsp->clk_cpu_msgbox);
 	clk_disable_unprepare(dsp->clk_bus);
 	clk_disable_unprepare(dsp->clk_dsp);
 	clk_rate_exclusive_put(dsp->clk_dsp);
 
+	/* Restore SRAM mapping */
 	ret = sunxi_sram_remap_set(SUNXI_SRAM_REMAP_LOCAL);
 	if (ret) {
 		dev_warn(&pdev->dev, "failed to remap DSP SRAM to local: %d\n",
 			 ret);
 	}
 
-	dma_free_coherent(&pdev->dev, SAMPLE_BUF_LEN, dsp->sample_buf,
-			  dsp->sample_buf_dma_addr);
-	dsp->sample_buf = NULL;
-	dsp->sample_buf_dma_addr = 0;
-
+	/* Reset state */
 	dsp->enabled = false;
+	dsp->mbox_cb = NULL;
+	dsp->mbox_cb_arg = NULL;
 
 	mutex_unlock(&dsp->mtx);
 }
@@ -659,12 +631,14 @@ struct platform_device *sunxi_dsp_by_phandle(struct device *dev, int index)
 
 	if (!node->fwnode.dev) {
 		dev_dbg(dev, "failed to access underlying fw device\n");
+		of_node_put(node);
 		return ERR_PTR(-EPROBE_DEFER);
 	}
 
 	if (!matches_driver(node->fwnode.dev->driver)) {
 		dev_dbg(dev, "driver does not match: %p\n",
 			node->fwnode.dev->driver);
+		of_node_put(node);
 		return ERR_PTR(-EPROBE_DEFER);
 	}
 	struct platform_device *dev_out = to_platform_device(node->fwnode.dev);

@@ -23,6 +23,25 @@
 		stdout-path = "serial0:115200n8";
 	};
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Allocate 4MB at start of DRAM for DSP DMA
+
+		   Here be dragons - This must be at the start of DRAM due to a rare
+		   hardware race condition in the TVD 3DCOMB DMA peripheral. Trying
+		   to move this will cause you to bang your head into the wall for
+		   weeks debugging random kernel panics.
+		*/
+		dsp_dma_pool: reservation-dsp-dma-pool@40000000 {
+			reg = <0x40000000 0x00400000>;
+			no-map;
+		};
+	};
+
+
 	/* TPS63802 3.3V DC/DC regulator on the board */
 	reg_3v3: regulator-3v3 {
 		compatible = "regulator-fixed";
@@ -197,6 +216,7 @@
 		status = "okay";
 		compatible = "dcav,winglet-adsb-rx";
 		dsp-inst = <&dsp0>;
+		memory-region = <&dsp_dma_pool>;
 	};
 };
 
@@ -250,6 +270,7 @@
 };
 
 &usbphy {
+	compatible = "allwinner,sun8i-t113s-usb-phy";
 	usb0_vbus-supply = <&reg_vcc5v>;
 	usb0_vbus_power-supply = <&usb_power_supply>;
 	axp2585-bmu = <&battery_power_supply>;

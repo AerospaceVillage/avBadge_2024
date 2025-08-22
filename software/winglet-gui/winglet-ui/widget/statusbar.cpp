@@ -6,17 +6,18 @@
 
 namespace WingletUI {
 
-StatusBar::StatusBar(QWidget *parent)
-    : QWidget{parent},
-      wifi_conn_0bar(":/icons/wifi/conn_0bar.png"), wifi_conn_1bar(":/icons/wifi/conn_1bar.png"),
-      wifi_conn_2bar(":/icons/wifi/conn_2bar.png"), wifi_conn_3bar(":/icons/wifi/conn_3bar.png"),
-      wifi_conn_4bar(":/icons/wifi/conn_4bar.png"), wifi_connecting(":/icons/wifi/connecting.png"),
-      wifi_disconnected(":/icons/wifi/disconnected.png"), wifi_off(":/icons/wifi/off.png"),
-      location_off(":/icons/location/off.png"), location_nolock(":/icons/location/nolock.png"),
-      location_okay(":/icons/location/okay.png"), adsb_off(":/icons/adsb/off.png"),
-      adsb_on(":/icons/adsb/on.png")
+StatusBar::StatusBar(QWidget *parent) : QWidget{parent}
 {
     setGeometry(0, 0, 480, 480);
+
+    // Load all icons (coloring according to color palette)
+    reloadPixmaps();
+
+    // Subscribe to color palette change events so the bg logo is updated if dark mode is changed
+    connect(activeTheme, SIGNAL(colorPaletteChanged()), this, SLOT(colorPaletteChanged()));
+
+    // Subscribe to time format change so we get instant UI feel
+    connect(&WingletGUI::inst->settings, SIGNAL(timeFormat12hrChanged(bool)), this, SLOT(timeFormatChanged(bool)));
 
     dateTimeLabel = new QLabel(this);
     dateTimeLabel->setText("Sat\nMar 14\n21:23");
@@ -66,6 +67,28 @@ StatusBar::~StatusBar()
     delete adsbIcon;
 }
 
+void StatusBar::timeFormatChanged(bool fmt12hr) {
+    (void) fmt12hr;  // Ignore, we'll directly query in time callback
+    timeRefreshCallback();
+}
+
+void StatusBar::reloadPixmaps() {
+    activeTheme->loadMonochromeIcon(&wifi_conn_0bar, ":/icons/wifi/conn_0bar.png");
+    activeTheme->loadMonochromeIcon(&wifi_conn_1bar, ":/icons/wifi/conn_1bar.png");
+    activeTheme->loadMonochromeIcon(&wifi_conn_2bar, ":/icons/wifi/conn_2bar.png");
+    activeTheme->loadMonochromeIcon(&wifi_conn_3bar, ":/icons/wifi/conn_3bar.png");
+    activeTheme->loadMonochromeIcon(&wifi_conn_4bar, ":/icons/wifi/conn_4bar.png");
+    activeTheme->loadMonochromeIcon(&wifi_connecting, ":/icons/wifi/connecting.png");
+    activeTheme->loadMonochromeIcon(&wifi_disconnected, ":/icons/wifi/disconnected.png");
+    activeTheme->loadMonochromeIcon(&wifi_off, ":/icons/wifi/off.png");
+    activeTheme->loadMonochromeIcon(&location_off, ":/icons/location/off.png");
+    activeTheme->loadMonochromeIcon(&location_nolock, ":/icons/location/nolock.png");
+    activeTheme->loadMonochromeIcon(&location_okay, ":/icons/location/okay.png");
+    activeTheme->loadMonochromeIcon(&adsb_off, ":/icons/adsb/off.png");
+    activeTheme->loadMonochromeIcon(&adsb_on, ":/icons/adsb/on.png");
+    prevBattIcon = BATT_ICON_UNSET;
+}
+
 void StatusBar::timeRefreshCallback()
 {
     auto now = QDateTime::currentDateTime();
@@ -73,7 +96,10 @@ void StatusBar::timeRefreshCallback()
         dateTimeLabel->setText("No\nTime");
     }
     else {
-        dateTimeLabel->setText(now.toString("ddd\nMMM d\nH:mm"));
+        const QString format24hr = QStringLiteral("ddd\nMMM d\nH:mm");
+        const QString format12hr = QStringLiteral("ddd\nMMM d\nh:mm\nAP");
+
+        dateTimeLabel->setText(now.toString(WingletGUI::inst->settings.timeFormat12hr() ? format12hr : format24hr));
     }
 }
 
@@ -225,7 +251,9 @@ void StatusBar::setBattIcon(BattIcon icon) {
         break;
     }
 
-    batteryIcon->setPixmap(QPixmap(resource));
+    QPixmap pixmap;
+    activeTheme->loadMonochromeIcon(&pixmap, resource);
+    batteryIcon->setPixmap(pixmap);
     prevBattIcon = icon;
 }
 
@@ -249,13 +277,17 @@ void StatusBar::updateAdsbState(bool on)
     adsbIcon->setPixmap(on ? adsb_on : adsb_off);
 }
 
-void StatusBar::showEvent(QShowEvent *ev)
-{
-    (void) ev;
+void StatusBar::forceRefreshIcons() {
     updateWifiIcon(WingletGUI::inst->wifiMon->wifiState(), WingletGUI::inst->wifiMon->wifiStrength());
     updateBatteryState(WingletGUI::inst->battMon->battState(), WingletGUI::inst->battMon->percentage());
     updateLocationState(WingletGUI::inst->gpsReceiver->state());
     updateAdsbState(WingletGUI::inst->adsbReceiver->connected());
+}
+
+void StatusBar::showEvent(QShowEvent *ev)
+{
+    (void) ev;
+    forceRefreshIcons();
     connect(WingletGUI::inst->wifiMon, SIGNAL(wifiStateChanged(int, int)), this, SLOT(updateWifiIcon(int, int)));
     connect(WingletGUI::inst->battMon, SIGNAL(battStateChanged(int, int)), this, SLOT(updateBatteryState(int, int)));
     connect(WingletGUI::inst->gpsReceiver, SIGNAL(stateUpdated(int)), this, SLOT(updateLocationState(int)));
@@ -272,6 +304,11 @@ void StatusBar::hideEvent(QHideEvent *ev)
     disconnect(WingletGUI::inst->gpsReceiver, SIGNAL(stateUpdated(int)), this, SLOT(updateLocationState(int)));
     disconnect(WingletGUI::inst->adsbReceiver, SIGNAL(connectionStateChanged(bool)), this, SLOT(updateAdsbState(bool)));
     timeRefresh->stop();
+}
+
+void StatusBar::colorPaletteChanged() {
+    reloadPixmaps();
+    forceRefreshIcons();
 }
 
 } // namespace WingletUI

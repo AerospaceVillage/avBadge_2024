@@ -47,9 +47,9 @@ scm_version()
 	if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
 	   head=$(git rev-parse --verify --short HEAD 2>/dev/null); then
 
-		# If we are at a tagged commit (like "v2.6.30-rc6"), we ignore
-		# it, because this version is defined in the top level Makefile.
-		if [ -z "$(git describe --exact-match 2>/dev/null)" ]; then
+		exact_tag="$(git describe --exact-match 2>/dev/null)"
+		if [ -z "$exact_tag" ]; then
+			# Not tagged commit
 
 			# If only the short version is requested, don't bother
 			# running further git commands
@@ -60,12 +60,15 @@ scm_version()
 			# If we are past a tagged commit (like
 			# "v2.6.30-rc5-302-g72357d5"), we pretty print it.
 			if atag="$(git describe 2>/dev/null)"; then
-				echo "$atag" | awk -F- '{printf("-%05d-%s", $(NF-1),$(NF))}'
+				echo "$atag" | awk -F- '{for (i = 1; i < NF-1; i++)  printf "-%s",$i; printf("-%05d-%s", $(NF-1),$(NF))}'
 
 			# If we don't have a tag at all we print -g{commitish}.
 			else
 				printf '%s%s' -g $head
 			fi
+                else
+			# Tagged commit, print the tag (uboot normally doesn't do this, but we have our own versioning stuff)
+			printf '-%s' "$exact_tag"
 		fi
 
 		# Is this git on svn?

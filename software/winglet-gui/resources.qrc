@@ -7,10 +7,14 @@
     </qresource>
     <qresource prefix="/images">
         <file alias="av_logo.png">assets/av_logo.png</file>
+        <file alias="canard_logo.png">assets/canard_logo.png</file>
         <file alias="dev_ring.png">assets/dev_ring.png</file>
         <file alias="CompasPath.svg">assets/CompasPath.svg</file>
         <file alias="FrogFly.png">assets/FrogFly.png</file>
         <file alias="alien_tesla.png">assets/alien_tesla.png</file>
+        <file alias="NOMAP.jpg">assets/NOMAP.jpg</file>
+        <file alias="airplane.svg">assets/airplane.svg</file>
+        <file alias="NOSDMAP.jpg">assets/NOSDMAPS.jpg</file>
     </qresource>
     <qresource prefix="/icons/wifi">
         <file alias="conn_0bar.png">assets/icons/wifi/conn_0bar.png</file>
@@ -60,8 +64,19 @@
     </qresource>
     <qresource prefix="/icons/settings">
         <file alias="checkbox_false.png">assets/icons/settings/checkbox_false.png</file>
+        <file alias="checkbox_indeterminate.png">assets/icons/settings/checkbox_indeterminate.png</file>
         <file alias="checkbox_true.png">assets/icons/settings/checkbox_true.png</file>
         <file alias="toggle_off.png">assets/icons/settings/toggle_off.png</file>
         <file alias="toggle_on.png">assets/icons/settings/toggle_on.png</file>
+        <file alias="wifi_open_0bar.png">assets/icons/settings/wifi_open_0bar.png</file>
+        <file alias="wifi_open_1bar.png">assets/icons/settings/wifi_open_1bar.png</file>
+        <file alias="wifi_open_2bar.png">assets/icons/settings/wifi_open_2bar.png</file>
+        <file alias="wifi_open_3bar.png">assets/icons/settings/wifi_open_3bar.png</file>
+        <file alias="wifi_open_4bar.png">assets/icons/settings/wifi_open_4bar.png</file>
+        <file alias="wifi_psk_0bar.png">assets/icons/settings/wifi_psk_0bar.png</file>
+        <file alias="wifi_psk_1bar.png">assets/icons/settings/wifi_psk_1bar.png</file>
+        <file alias="wifi_psk_2bar.png">assets/icons/settings/wifi_psk_2bar.png</file>
+        <file alias="wifi_psk_3bar.png">assets/icons/settings/wifi_psk_3bar.png</file>
+        <file alias="wifi_psk_4bar.png">assets/icons/settings/wifi_psk_4bar.png</file>
     </qresource>
 </RCC>

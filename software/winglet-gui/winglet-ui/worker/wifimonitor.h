@@ -4,10 +4,19 @@
 #include <QTimer>
 #include <QSocketNotifier>
 #include <QMap>
+#include <QMutex>
+#include <QWaitCondition>
 
 struct wpa_ctrl;
 
 namespace WingletUI {
+
+struct WifiScanResult {
+    QString ssid;
+    int signalStrength;
+    bool encrypted;
+    bool known;
+};
 
 class WifiMonitor : public QObject
 {
@@ -31,11 +40,14 @@ public:
     void removeNetwork(int networkId);
     void raiseInterface();
     void lowerInterface();
+    void scanNetworks();
+    QList<WifiScanResult> getScanResults();
 
 signals:
     void wifiStateChanged(int state, int wifiStrength);
     void networkIdChanged(int networkId);
     void networkListChanged();
+    void scanResultsChanged();
 
     // Private Signals
     void doAddOpenNetwork(QString ssid, QPrivateSignal);
@@ -43,6 +55,8 @@ signals:
     void doRemoveNetwork(int networkId, QPrivateSignal);
     void doRaiseInterface(QPrivateSignal);
     void doLowerInterface(QPrivateSignal);
+    void doScanNetworks(QPrivateSignal);
+    void doRefreshScanResults(QPrivateSignal);
 
 private slots:
     void pollTimerCallback();
@@ -52,6 +66,8 @@ private slots:
     void removeNetworkInThread(int networkId);
     void raiseInterfaceInThread();
     void lowerInterfaceInThread();
+    void scanNetworksInThread();
+    void refreshScanResultsInThread();
 
 private:
     // Utility Functions
@@ -71,6 +87,7 @@ private:
     struct wpa_ctrl* wpaAsyncMsgCtrl = NULL;
     const int pollTimerRateMs = 1000;
     char* rxBuf;
+    char* asyncRxBuf;
     const size_t rxBufLen = 4096;
 
     // State Reporting
@@ -81,8 +98,19 @@ private:
 
     QMap<QString, QString> *statusMap;
     QMap<int, QString> networkMap;
+
+    // Scanning state
+    bool m_scanInProgress = false;     // Holds if a scan is currently in progress to prevent multiple requests from going out
+    bool m_scanResultsNeedsRedout = false;  // If true, then m_scanResults needs to be refreshed from the underlying wpa supplicant connection (starts as false since we're not connected)
+    bool m_scanResetReadout = false;   // If true, then a scan finished as we were reading out the BSS data. The readout should be reset and started from the beginning (as the idx is no longer valid)
+    bool m_scanReadoutInProgress = false;  // If true a scan readout is currently in progress (prevents reentry issues, maybe not needed but better to be safe)
+    QMutex m_scanResultsMutex;
+    QWaitCondition m_scanResultsReadyWait;
+    QList<WifiScanResult> m_scanResults;
 };
 
 } // namespace WingletUI
+
+Q_DECLARE_METATYPE(WingletUI::WifiScanResult);
 
 #endif // WINGLETUI_WIFIMONITOR_H

@@ -13,6 +13,7 @@ class TimeZoneSettingModel : public QAbstractItemModel
     Q_OBJECT
 public:
     explicit TimeZoneSettingModel(QObject *parent = nullptr);
+    ~TimeZoneSettingModel();
 
     QModelIndex getIndexForPropVal(const QByteArray& tzId) const;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

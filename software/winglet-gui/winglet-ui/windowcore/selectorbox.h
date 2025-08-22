@@ -28,6 +28,8 @@ protected slots:
 private:
     QLabel *avLogoLabel;
     StatusBar *statusBar;
+
+public:
     ScrollableMenu *menuWidget;
 };
 

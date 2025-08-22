@@ -11,7 +11,7 @@ using namespace WingletUI;
 const QList<QString> CircularKeyboard::fullKeyboard = {
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ :;'\"[]",
     "abcdefghijklmnopqrstuvwxyz ,.!?-/",
-    "01234567890=`\\@#$%^&*(){}~|<>"
+    "01234567890=`\\@#$%^&*(){}~|<>_+"
 };
 
 const QString singleKbdInstructions = "<html><head/><body><p>"
@@ -37,22 +37,27 @@ CircularKeyboard::CircularKeyboard(QList<QString> keyboardChars, QWidget* parent
 
     assert(keyboardChars.size() > 0);
     selectedKbdIdx = 0;
+    passwordHideCharTimeout.setSingleShot(true);
+    passwordHideCharTimeout.setInterval(5000);  // Hide password after 5 seconds
+    connect(&passwordHideCharTimeout, SIGNAL(timeout()), this, SLOT(onPasswordHideCharTimeout()));
 
     // Draw Center Elements
-    textBox = new QLabel(this);
+    textBox = new ElidedLabel(this);
     textBox->setAlignment(Qt::AlignCenter);
+    textBox->setElideMode(Qt::ElideLeft);  // We want the ... on the left so the user can see what they're typing
     textBox->setFont(standardFont);
     textBox->setForegroundRole(QPalette::WindowText);
-    textBox->setMaximumWidth(380);
-    refreshTextBox();
+    textBox->setFixedSize(350, 120);
+    textBox->setMultiline(true);
+    moveCenter(textBox, 240, 240);
 
-    titleBox = new QLabel(this);
+    titleBox = new ElidedLabel(this);
     titleBox->setAlignment(Qt::AlignCenter);
     titleBox->setFont(QFont(activeTheme->titleFont, 16));
     titleBox->setForegroundRole(QPalette::Text);
     titleBox->setText("");
     titleBox->setFixedSize(280, 60);
-    titleBox->setWordWrap(true);
+    titleBox->setMultiline(true);
     moveCenter(titleBox, 240, 150);
 
     instructionsBox = new QLabel(this);
@@ -81,6 +86,19 @@ void CircularKeyboard::setValue(const QString& val) {
     else {
         userInputString = val;
     }
+    if (passwordShowLastChar) {
+        passwordShowLastChar = false;
+        passwordHideCharTimeout.stop();
+    }
+    refreshTextBox();
+}
+
+void CircularKeyboard::setPasswordMaskEnable(bool en) {
+    m_passwordMaskEnable = en;
+    if (passwordShowLastChar) {
+        passwordShowLastChar = false;
+        passwordHideCharTimeout.stop();
+    }
     refreshTextBox();
 }
 
@@ -89,6 +107,10 @@ void CircularKeyboard::setMaxLength(int len)
     m_maxLength = len;
     if (len >= 0 && userInputString.length() > len) {
         userInputString = userInputString.left(len);
+        if (passwordShowLastChar) {
+            passwordShowLastChar = false;
+            passwordHideCharTimeout.stop();
+        }
         refreshTextBox();
     }
 }
@@ -128,6 +150,12 @@ void CircularKeyboard::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_A:
         if (userInputString.size() || m_allowEmptyInput) {
+            if (passwordShowLastChar) {
+                passwordShowLastChar = false;
+                passwordHideCharTimeout.stop();
+                refreshTextBox();
+            }
+
             int pos = 0;
             if (!m_validator || m_validator->validate(userInputString, pos) == QValidator::Acceptable) {
                 m_entrySuccessful = true;
@@ -207,19 +235,31 @@ void CircularKeyboard::onEntrySelectionConfirm() {
         return;
 
     userInputString += keyboardChars.at(selectedKbdIdx).at(selectedEntryIdx);
-
+    if (m_passwordMaskEnable) {
+        passwordShowLastChar = true;
+        passwordHideCharTimeout.start();
+    }
     refreshTextBox();
 }
 
 void CircularKeyboard::onEntrySelectionBackspace() {
     if (userInputString.length() > 0) {
         userInputString = userInputString.left(userInputString.length() - 1);
+        if (passwordShowLastChar) {
+            passwordShowLastChar = false;
+            passwordHideCharTimeout.stop();
+        }
         refreshTextBox();
     }
     else {
         // No more things to backspace, just go back to previous screen
         WingletGUI::inst->removeWidgetOnTop(this);
     }
+}
+
+void CircularKeyboard::onPasswordHideCharTimeout() {
+    passwordShowLastChar = false;
+    refreshTextBox();
 }
 
 void CircularKeyboard::fixIndexCenter(int idx)
@@ -303,8 +343,17 @@ void CircularKeyboard::refreshSelectedIndex()
 
 void CircularKeyboard::refreshTextBox()
 {
-    textBox->setText(m_prompt + userInputString);
-    textBox->ensurePolished();
-    textBox->adjustSize();
-    moveCenter(textBox, 240, 240);
+    if (m_passwordMaskEnable) {
+        const QChar passwordChar(0x2022);  // Unicode password dot
+        QString maskedInput(userInputString.size(), passwordChar);
+        if (maskedInput.length() > 0) {
+            int lastIdx = maskedInput.length() - 1;
+            if (passwordShowLastChar)
+                maskedInput[lastIdx] = userInputString.at(lastIdx);
+        }
+        textBox->setText(m_prompt + maskedInput);
+    }
+    else {
+        textBox->setText(m_prompt + userInputString);
+    }
 }

@@ -38,6 +38,18 @@ Clock::Clock(QWidget *parent)
     QTimer* tir = new QTimer(this);
     connect(tir, SIGNAL(timeout()), this, SLOT(showTime()));
     tir->start(1000);
+
+    //Setup LEDs
+    for(int ledN = 0; ledN < WingletGUI::inst->ledControl->LED_COUNT; ledN++){
+        WingletGUI::inst->ledControl->setRingLed(ledN, 255,172,17);
+    }
+}
+
+Clock::~Clock(){
+    delete clockLabel;
+    delete avLogoLabel;
+
+    WingletGUI::inst->ledControl->clearRing();
 }
 
 void Clock::showEvent(QShowEvent *ev)

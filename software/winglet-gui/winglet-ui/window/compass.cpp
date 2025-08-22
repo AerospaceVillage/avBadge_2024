@@ -3,8 +3,7 @@
 #include <QPainterPath>
 #include <QKeyEvent>
 #include <QWheelEvent>
-
-#include "rgbleds.h"
+#include "wingletgui.h"
 
 namespace WingletUI {
 
@@ -16,8 +15,8 @@ const static std::map<int,int> mapValue =
      {-135,3},{-153,2},{-171,1},{-189,0},{-207,19},{-225,18},{-243,17},
      {-261,16},{-279,15},{-297,14},{-315,13},{-333,12},{-351,11}};
 
-const static rgb inColor = {.r = 1.0, .g = 0.0, .b = 0.0};
-const static rgb offColor = {};
+// const static rgb inColor = {.r = 1.0, .g = 0.0, .b = 0.0};
+// const static rgb offColor = {};
 
 Compass::Compass(QWidget *parent):
     QWidget{parent}
@@ -34,7 +33,7 @@ Compass::~Compass()
 void Compass::hideEvent(QHideEvent *ev)
 {
     (void) ev;
-    rgbled_clear();
+    WingletGUI::inst->ledControl->clearRing();
 }
 
 void Compass::paintEvent(QPaintEvent *pEvent)
@@ -102,8 +101,17 @@ void Compass::paintEvent(QPaintEvent *pEvent)
 
 void Compass::setLed(int idx, bool enable) {
     auto oldVal = mapValue.find(idx);
-    if (oldVal != mapValue.end())
-        rgbled_set(oldVal->second, enable ? inColor : offColor);
+    if(!enable){
+        WingletGUI::inst->ledControl->clearRing();
+    }
+    if (oldVal != mapValue.end()) {
+        if(enable){
+            WingletGUI::inst->ledControl->setRingLed(oldVal->second,255,0,0);
+        }
+        else {
+            WingletGUI::inst->ledControl->setRingLed(oldVal->second,0,0,0);
+        }
+    }
 }
 
 void Compass::wheelEvent(QWheelEvent *ev) {

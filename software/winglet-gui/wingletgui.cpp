@@ -1,5 +1,6 @@
 #include "wingletgui.h"
 #include "winglet-ui/theme.h"
+#include "winglet-ui/hardware/canardinterface.h"
 #include "winglet-ui/windowcore/mainmenu.h"
 #include "winglet-ui/windowcore/messagebox.h"
 #include <QKeyEvent>
@@ -8,10 +9,14 @@ WingletGUI* WingletGUI::inst = NULL;
 
 WingletGUI::WingletGUI(QWidget *parent)
     : QMainWindow{parent}, settings(this),
+      canardSettings(new WingletUI::CanardSettings(this)),
       appStack(new QStackedWidget(this)),
       gpioControl(new WingletUI::GPIOControl(this)),
-      brightnessControl(new WingletUI::BrightnessControl(this))
+      brightnessControl(new WingletUI::BrightnessControl(this)),
+      usbRoleControl(new WingletUI::USBRoleControl(this)),
+      ledControl(new WingletUI::LedControl(this))
 {
+
     if (inst != NULL) {
         qWarning("WingletGUI::WingletGUI: Second time GUI core initialized, not setting global instance!");
     }
@@ -21,6 +26,15 @@ WingletGUI::WingletGUI(QWidget *parent)
 
     setObjectName("WingletGUI");
 
+    // Subscribe this class to events about the current color mode changing
+    connect(&settings, SIGNAL(darkModeChanged(bool)), WingletUI::activeTheme, SLOT(setColorModePalette(bool)));
+    WingletUI::activeTheme->setColorModePalette(settings.darkMode());
+
+    connect(WingletUI::activeTheme, SIGNAL(colorPaletteChanged()), this, SLOT(colorPaletteUpdated()));
+
+    // Reset LEDs on startup
+    ledControl->clearRing();
+
     // Create a dummy socket in the main thread before any other theads spawn
     // This prevents qwarnings sometimes about a meta type being already registered
     // (since registering in the other threads causes a race condition)
@@ -28,6 +42,7 @@ WingletGUI::WingletGUI(QWidget *parent)
     dummySocket = new QTcpSocket(this);
 
     // Create Worker Threads
+    qRegisterMetaType<WingletUI::WifiScanResult>();
     wifiMonThread = new WingletUI::WorkerThread<WingletUI::WifiMonitor>();
     wifiMonThread->start();
     wifiMon = wifiMonThread->getWorkerObj();
@@ -46,6 +61,11 @@ WingletGUI::WingletGUI(QWidget *parent)
     adsbReceiverThread = new WingletUI::WorkerThread<WingletUI::ADSBReceiver>();
     adsbReceiverThread->start();
     adsbReceiver = adsbReceiverThread->getWorkerObj();
+
+    saoMonThread = new WingletUI::WorkerThread<WingletUI::SAOMonitor>();
+    saoMonThread->start();
+    saoMonitor = saoMonThread->getWorkerObj();
+
 
     // Initialize Theme
     resize(480, 480);
@@ -84,6 +104,7 @@ WingletGUI::~WingletGUI()
     gpsReceiverThread->quit();
     adsbReceiverThread->quit();
     battMonThread->quit();
+    saoMonThread->quit();
 
     wifiMonThread->wait();
     delete wifiMonThread;
@@ -93,7 +114,11 @@ WingletGUI::~WingletGUI()
     delete gpsReceiverThread;
     adsbReceiverThread->wait();
     delete adsbReceiverThread;
+    saoMonThread->wait();
+    delete saoMonThread;
 
+
+    delete ledControl;
     delete gpioControl;
     delete brightnessControl;
 }
@@ -184,7 +209,7 @@ void WingletGUI::showMessageBox(const QString& msg, const QString& title, const 
     auto msgbox = new WingletUI::MessageBox(this, alignment);
     msgbox->setMessageText(msg);
     msgbox->setTitleText(title);
-    msgbox->setButtonText(buttonText);
+    msgbox->setSingleButtonWithText(buttonText);
     if (replaceCurrentWidget) {
         replaceWidgetOnTop(appStack->currentWidget(), msgbox);
     }
@@ -195,6 +220,10 @@ void WingletGUI::showMessageBox(const QString& msg, const QString& title, const 
 
 void WingletGUI::gpsUpdated(WingletUI::GPSReading reading) {
     settings.reportGPSReading(&reading);
+}
+
+void WingletGUI::colorPaletteUpdated() {
+    setPalette(WingletUI::activeTheme->palette);
 }
 
 bool WingletGUI::eventFilter(QObject *object, QEvent *event)
@@ -210,4 +239,31 @@ bool WingletGUI::eventFilter(QObject *object, QEvent *event)
         }
     }
     return false;
+}
+
+bool WingletGUI::tryShowReleaseNotes(bool forceShow)
+{
+    // Only show release notes if flag file exiists
+    if (!forceShow && !QFile::exists(RELEASE_NOTES_FLAG_FILE))
+        return false;
+
+    QFile file(RELEASE_NOTES_LOCATION);
+    if(!file.open(QIODevice::ReadOnly)) {
+        // Couldn't open release notes file
+        return false;
+    }
+
+    QTextStream in(&file);
+    QString title = in.readLine();
+    QString body = in.readAll();
+    file.close();
+
+    if (title.isEmpty() || body.isEmpty()) {
+        // Don't show empty message box
+        return false;
+    }
+
+    // We've got release notes and can show them- display now
+    WingletGUI::inst->showMessageBox(body, title, "Okay", false, Qt::AlignLeft | Qt::AlignVCenter);
+    return true;
 }

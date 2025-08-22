@@ -44,7 +44,7 @@ void AppSettingsBoolPropEntry::setValue(bool val) {
     prop.write(propOwner, val);
 }
 
-bool AppSettingsBoolPropEntry::value() const {
+int AppSettingsBoolPropEntry::value() const {
     if (!prop.isValid())
         return false;
 

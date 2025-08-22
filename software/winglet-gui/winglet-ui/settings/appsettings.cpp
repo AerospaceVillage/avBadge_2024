@@ -6,6 +6,8 @@
 
 #include "winglet-ui/worker/gpsreceiver.h"
 #include "appsettingspropentry.h"
+#include "fastchargesetting.h"
+#include "rootpasswordsetting.h"
 #include "timezonesetting.h"
 #include "wifienablesetting.h"
 
@@ -23,7 +25,8 @@ AppSettings::AppSettings(QObject *parent)
     SettingsEntryContainer* wifiSettings = new SettingsEntryContainer(this, "WiFi");
     wifiEnableSettingPtr = new WifiEnableSetting(this);  // Need to save to pointer so we can notify when wifi monitor is online
     wifiSettings->addEntry(wifiEnableSettingPtr);
-    wifiSettings->addEntry(new SettingsActionEntry(this, "Add WiFi Network", ACTION_JOIN_WIFI));
+    wifiSettings->addEntry(new SettingsActionEntry(this, "Join WiFi Network", ACTION_WIFI_SCAN));
+    wifiSettings->addEntry(new SettingsActionEntry(this, "Manual WiFi Entry", ACTION_WIFI_MANUAL));
     wifiSettings->addEntry(new SettingsActionEntry(this, "Known Networks", ACTION_MANAGE_WIFI_NETWORKS));
     m_settingsEntryRoot->addEntry(wifiSettings);
 
@@ -40,6 +43,7 @@ AppSettings::AppSettings(QObject *parent)
                                                                    {750, "75%"},
                                                                    {1000, "100%"}
                                                                }));
+    uiSettings->addEntry(new AppSettingsBoolPropEntry(this, "darkMode", "Dark Mode"));
     uiSettings->addEntry(new AppSettingsEnumPropEntry(this, "adsbDecayTimeSec", "ADSB Timeout", {
                                                                    {15, "15 Seconds"},
                                                                    {30, "30 Seconds"},
@@ -48,7 +52,8 @@ AppSettings::AppSettings(QObject *parent)
                                                                    {180, "3 Minutes"},
                                                                    {300, "5 Minutes"},
                                                                }));
-    uiSettings->addEntry(new TimeZoneSetting(this));
+    uiSettings->addEntry(new AppSettingsBoolPropEntry(this, "timeFormat12hr", "12 Hour Time"));
+    uiSettings->addEntry(new AppSettingsBoolPropEntry(this, "sdCardMaps", "SD card Maps"));
     uiSettings->addEntry(new AppSettingsBoolPropEntry(this, "invertedScrollDirection", "Invert Scrolling"));
     uiSettings->addEntry(new AppSettingsDoublePropEntry(this, "lastLatitude","Cached Latitude",
                                                               "(Only kept till next GPS Lock)\nEnter Latitude:",
@@ -56,9 +61,30 @@ AppSettings::AppSettings(QObject *parent)
     uiSettings->addEntry(new AppSettingsDoublePropEntry(this, "lastLongitude","Cached Longitude",
                                                                "(Only kept till next GPS Lock)\nEnter Longitude:",
                                                                {}, -180, 180));
+    uiSettings->addEntry(new SettingsActionEntry(this, "Cold Boot GPS", ACTION_COLD_BOOT_GPS));
     m_settingsEntryRoot->addEntry(uiSettings);
 
+    SettingsEntryContainer* systemSettings = new SettingsEntryContainer(this, "System Options");
+    systemSettings->addEntry(new RootPasswordSetting(this));
+    systemSettings->addEntry(new SettingsActionEntry(this, "Clear Root Password", ACTION_CLEAR_ROOT_PASSWORD));
+    systemSettings->addEntry(new TimeZoneSetting(this));
+    systemSettings->addEntry(new FastChargeSetting(this));
+    systemSettings->addEntry(new AppSettingsEnumPropEntry(this, "ledBrightness", "LED Brightness", {
+                                                                      {0, "Off"},
+                                                                      {3, "Low"},
+                                                                      {5, "Medium"},
+                                                                      {9, "Full"},
+                                                                }));
+    systemSettings->addEntry(new AppSettingsBoolPropEntry(this, "battLedEnable", "Batt Level LEDs"));
+    systemSettings->addEntry(new AppSettingsEnumPropEntry(this, "usbRole", "USB Role (Prototype)", {
+                                                              {USB_ROLE_DEVICE, "Device"},
+                                                              {USB_ROLE_HOST, "Host"},
+                                                              {USB_ROLE_AUTO, "Auto"}
+                                                          }));
+    m_settingsEntryRoot->addEntry(systemSettings);
+
     m_settingsEntryRoot->addEntry(new SettingsActionEntry(this, "About Device", ACTION_ABOUT));
+    m_settingsEntryRoot->addEntry(new SettingsActionEntry(this, "View Release Notes", ACTION_RELEASE_NOTES));
     m_settingsEntryRoot->addEntry(new SettingsActionEntry(this, "Join Private Discord", ACTION_PRIVATE_DISCORD));
 }
 
@@ -78,7 +104,7 @@ void AppSettings::loadSettings()
     QJsonParseError error;
     auto settingsDoc = QJsonDocument::fromJson(inFile.readAll(), &error);
     if (settingsDoc.isNull()) {
-        qWarning("Failed to decode settings JSON: %s", error.errorString().toLatin1().data());
+        qWarning("Failed to decode settings JSON: %s", qUtf8Printable(error.errorString()));
         return;
     }
 
@@ -90,9 +116,9 @@ void AppSettings::loadSettings()
     auto settingsObj = settingsDoc.object();
     foreach (const QString& key, settingsObj.keys()) {
         QJsonValue value = settingsObj.value(key);
-        const char *keyStr = key.toLatin1().data();
-        if (!setProperty(keyStr, value.toVariant())) {
-            qWarning("Failed to load setting '%s'", keyStr);
+        QByteArray keyStr = key.toLatin1();
+        if (!setProperty(keyStr.data(), value.toVariant())) {
+            qWarning("Failed to load setting '%s'", keyStr.data());
         }
     }
 }

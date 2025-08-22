@@ -74,9 +74,9 @@ class AbstractBoolSetting : public AbstractSettingsEntry
 public:
     explicit AbstractBoolSetting(QObject *parent, QString name): AbstractSettingsEntry(parent, name) {}
 
-    virtual bool value() const = 0;
+    virtual int value() const = 0;
     virtual void setValue(bool val) = 0;
-    virtual void toggle() { setValue(!value()); }
+    virtual void toggle() { int val = value(); if (val >= 0) setValue(!val); }
 };
 
 class AbstractListSetting : public AbstractSettingsEntry
@@ -96,6 +96,7 @@ public:
     using AbstractSettingsEntry::AbstractSettingsEntry;
 
     virtual QString value() const = 0;
+    virtual QString displayValue() const { return value(); }
     virtual void setValue(const QString &val) = 0;
 
     // These control properties for the underlying circular keyboard
@@ -106,6 +107,7 @@ public:
     virtual QValidator* validator() const { return nullptr; }
     virtual bool allowEmptyInput() const { return false; }
     virtual QString validatorFailedMsg() const { return ""; }
+    virtual bool isPasswordField() const { return false; }
 };
 
 } // namespace WingletUI

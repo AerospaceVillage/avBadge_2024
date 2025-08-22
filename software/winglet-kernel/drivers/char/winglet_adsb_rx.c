@@ -11,6 +11,7 @@
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
+#include <linux/of_reserved_mem.h>
 #include <linux/platform_device.h>
 #include <linux/poll.h>
 
@@ -34,6 +35,11 @@ struct adsb_rx_inst {
 	wait_queue_head_t wq;
 	DECLARE_KFIFO(adsb_buffer, struct adsb_msg, ADSB_MSG_BUFFER_DEPTH);
 	int in_test_mode;
+	int booted_in_test_mode;
+
+	void* sample_buf;
+	phys_addr_t sample_buf_phys_addr;
+	size_t sample_buf_len;
 };
 
 /******************************************
@@ -89,13 +95,34 @@ static void adsb_rx_mbox_cb(unsigned int mbox, unsigned int val, void *arg)
 // initialize file_operations
 static int adsbdev_open(struct inode *inode, struct file *file)
 {
+	int ret;
+
 	struct adsb_rx_inst *inst =
 		container_of(inode->i_cdev, struct adsb_rx_inst, cdev);
 	INIT_KFIFO(inst->adsb_buffer);
 
 	dev_info(&inst->pdev->dev, "device open\n");
-	return sunxi_dsp_enable("dsp0.hex", inst->dsp_pdev, adsb_rx_mbox_cb,
-				inst);
+
+	/* Start DSP */
+	volatile int in_test_mode = inst->in_test_mode;
+	const char* fw_name = in_test_mode ? "dsp0_testmode.hex" : "dsp0.hex";
+	ret = sunxi_dsp_enable(fw_name, inst->dsp_pdev, adsb_rx_mbox_cb,
+			       inst);
+	if (ret) {
+		return ret;
+	}
+
+	/* Pass the reserved sample buffer pointer to the DSP. */
+	ret = sunxi_dsp_msgbox_send(inst->dsp_pdev, 0,
+				    (u32)inst->sample_buf_phys_addr);
+	if (ret) {
+		dev_warn(&inst->pdev->dev, "failed to send DMA pointer to DSP\n");
+		sunxi_dsp_disable(inst->dsp_pdev);
+		return ret;
+	}
+
+	inst->booted_in_test_mode = in_test_mode;
+	return 0;
 }
 
 static int adsbdev_release(struct inode *inode, struct file *file)
@@ -126,9 +153,9 @@ static ssize_t adsbdev_read(struct file *file, char __user *buf, size_t count,
 	dev_vdbg(&inst->pdev->dev, "device read\n");
 	int ret;
 
-	if (inst->in_test_mode) {
-		if (count > SAMPLE_BUF_LEN) {
-			count = SAMPLE_BUF_LEN;
+	if (inst->booted_in_test_mode) {
+		if (count > inst->sample_buf_len) {
+			count = inst->sample_buf_len;
 		}
 		if (count % 2 != 0) {
 			count /= 2;
@@ -150,9 +177,8 @@ static ssize_t adsbdev_read(struct file *file, char __user *buf, size_t count,
 		}
 	}
 
-	if (inst->in_test_mode) {
-		ret = __copy_to_user(
-			buf, sunxi_dsp_sample_buf_addr(inst->dsp_pdev), count);
+	if (inst->booted_in_test_mode) {
+		ret = __copy_to_user(buf, inst->sample_buf, count);
 		if (ret) {
 			return ret;
 		}
@@ -252,6 +278,8 @@ static int adsb_rx_probe(struct platform_device *pdev)
 {
 	int err = 0;
 	struct adsb_rx_inst *pc;
+	struct device_node *reserved_mem_node, *np;
+	struct reserved_mem *rmem;
 
 	pc = devm_kzalloc(&pdev->dev, sizeof(*pc), GFP_KERNEL);
 	if (!pc)
@@ -263,6 +291,7 @@ static int adsb_rx_probe(struct platform_device *pdev)
 	INIT_KFIFO(pc->adsb_buffer);
 	pc->in_test_mode = 0;
 
+	/* Get underlying DSP driver instance */
 	pc->dsp_pdev = sunxi_dsp_by_phandle(&pdev->dev, 0);
 	if (IS_ERR(pc->dsp_pdev)) {
 		err = PTR_ERR(pc->dsp_pdev);
@@ -270,10 +299,42 @@ static int adsb_rx_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	/* Get the memory region that was reserved for the DMA */
+	np = dev_of_node(&pdev->dev);
+	if (!np) {
+		dev_dbg(&pdev->dev, "device does not have a device node entry\n");
+		return -EINVAL;
+	}
+
+	reserved_mem_node = of_parse_phandle(np, "memory-region", 0);
+	if (!reserved_mem_node) {
+		dev_dbg(&pdev->dev, "failed to get phandle for memory-region\n");
+		return -ENOENT;
+	}
+
+	rmem = of_reserved_mem_lookup(reserved_mem_node);
+	of_node_put(reserved_mem_node);
+	if (!rmem) {
+		dev_dbg(&pdev->dev, "unable to resolve memory-region\n");
+		return -EINVAL;
+	}
+
+	pc->sample_buf_phys_addr = rmem->base;
+	pc->sample_buf_len = rmem->size;
+	pc->sample_buf = devm_ioremap_wc(&pdev->dev, pc->sample_buf_phys_addr,
+					 pc->sample_buf_len);
+	if (!pc->sample_buf) {
+		dev_dbg(&pdev->dev, "unable to map memory region: %pa+%zx\n",
+			&rmem->base, pc->sample_buf_len);
+		return -EBUSY;
+	}
+
+	/* Allocate the character device */
 	err = adsb_get_next_dev(&pc->adsb_dev);
 	if (err) {
-		dev_dbg(&pdev->dev, "no minor devices left");
-		return -ENOSPC;
+		dev_dbg(&pdev->dev, "no minor devices left\n");
+		err = -ENOSPC;
+		goto release_iomap;
 	}
 
 	cdev_init(&pc->cdev, &adsbdev_fops);
@@ -294,7 +355,9 @@ static int adsb_rx_probe(struct platform_device *pdev)
 		goto delete_cdev;
 	}
 
-	dev_info(&pdev->dev, "bound adsb driver to %s\n", pc->dsp_pdev->name);
+	dev_info(&pdev->dev, "bound adsb%d to %s; dma-buf@%08X len 0x%X\n",
+		MINOR(pc->adsb_dev), pc->dsp_pdev->name,
+		pc->sample_buf_phys_addr, pc->sample_buf_len);
 
 	return 0;
 
@@ -303,6 +366,9 @@ delete_cdev:
 
 release_minor:
 	adsb_release_dev(pc->adsb_dev);
+
+release_iomap:
+	devm_iounmap(&pdev->dev, pc->sample_buf);
 
 	return err;
 }

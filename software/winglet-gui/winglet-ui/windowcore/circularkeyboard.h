@@ -3,6 +3,8 @@
 
 #include <QLabel>
 #include <QValidator>
+#include <QTimer>
+#include "winglet-ui/widget/elidedlabel.h"
 
 class CircularKeyboard: public QWidget {
     Q_OBJECT
@@ -10,6 +12,7 @@ class CircularKeyboard: public QWidget {
     Q_PROPERTY(QString value READ value WRITE setValue NOTIFY entryComplete)
     Q_PROPERTY(int maxLength READ maxLength WRITE setMaxLength)
     Q_PROPERTY(bool allowEmptyInput READ allowEmptyInput WRITE setAllowEmptyInput)
+    Q_PROPERTY(bool passwordMaskEnable READ passwordMaskEnable WRITE setPasswordMaskEnable)
     Q_PROPERTY(QString validatorFailedMsg READ validatorFailedMsg WRITE setValidatorFailedMsg)
     Q_PROPERTY(QString prompt READ prompt WRITE setPrompt)
     Q_PROPERTY(QString title READ title WRITE setTitle)
@@ -28,6 +31,9 @@ public:
 
     int allowEmptyInput() const { return m_allowEmptyInput; }
     void setAllowEmptyInput(bool allow) { m_allowEmptyInput = allow; }
+
+    bool passwordMaskEnable() const { return m_passwordMaskEnable; }
+    void setPasswordMaskEnable(bool en);
 
     const QValidator* validator() const { return m_validator; }
     void setValidator(const QValidator* validator) { m_validator = validator; }
@@ -57,6 +63,7 @@ private slots:
     void onEntrySelectionPrev();
     void onEntrySelectionConfirm();
     void onEntrySelectionBackspace();
+    void onPasswordHideCharTimeout();
 
 private:
     QList<QString> keyboardChars;
@@ -65,11 +72,14 @@ private:
     double keysStartAngle;
 
     bool m_allowEmptyInput = false;
+    bool m_passwordMaskEnable = false;
     int m_maxLength = -1;
     const QValidator* m_validator = NULL;
     QString m_validatorFailedMsg = "Input does not match required criteria";
 
     bool m_entrySuccessful = false;
+    bool passwordShowLastChar = false;
+    QTimer passwordHideCharTimeout;
 
     QList<QWidget*> character_widgets;
     QWidget* selectedEntry;
@@ -77,8 +87,8 @@ private:
     QWidget* lastSelectedEntry;
     int lastSelectedEntryIdx;
 
-    QLabel* titleBox;
-    QLabel* textBox;
+    ElidedLabel* titleBox;
+    ElidedLabel* textBox;
     QLabel* instructionsBox;
     QString userInputString;
     QString m_prompt = "Enter Data:\n";

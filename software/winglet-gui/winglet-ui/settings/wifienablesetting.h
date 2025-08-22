@@ -14,7 +14,7 @@ public:
 
     void reportMonitorReady();
 
-    bool value() const override;
+    int value() const override;
     void setValue(bool val) override;
 
 private slots:
@@ -23,6 +23,7 @@ private slots:
 private:
     bool monitorReady = false;
     bool cachedWifiOnVal = false;
+    bool waitingForStateChange = false;
 };
 
 } // namespace WingletUI

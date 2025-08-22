@@ -62,6 +62,7 @@ WifiMonitor::WifiMonitor(QThread *ownerThread)
     moveToThread(ownerThread);
 
     rxBuf = new char[rxBufLen];
+    asyncRxBuf = new char[rxBufLen];
     statusMap = new QMap<QString, QString>();
 
     connect(this, SIGNAL(doAddOpenNetwork(QString)), this, SLOT(addOpenNetworkInThread(QString)));
@@ -69,6 +70,8 @@ WifiMonitor::WifiMonitor(QThread *ownerThread)
     connect(this, SIGNAL(doRemoveNetwork(int)), this, SLOT(removeNetworkInThread(int)));
     connect(this, SIGNAL(doRaiseInterface()), this, SLOT(raiseInterfaceInThread()));
     connect(this, SIGNAL(doLowerInterface()), this, SLOT(lowerInterfaceInThread()));
+    connect(this, SIGNAL(doScanNetworks()), this, SLOT(scanNetworksInThread()));
+    connect(this, SIGNAL(doRefreshScanResults()), this, SLOT(refreshScanResultsInThread()));
 
     pollTimer = new QTimer(this);
     connect(pollTimer, SIGNAL(timeout()), this, SLOT(pollTimerCallback()));
@@ -89,6 +92,7 @@ WifiMonitor::~WifiMonitor()
     }
     delete pollTimer;
     delete[] rxBuf;
+    delete[] asyncRxBuf;
     delete statusMap;
 }
 
@@ -110,10 +114,10 @@ void WifiMonitor::asyncReadReady(QSocketDescriptor socket, QSocketNotifier::Type
         return;
     }
 
-    int ret;
-    while ((ret = wpa_ctrl_pending(wpaAsyncMsgCtrl)) == 1) {
+    int ret = 0;
+    while (wpaAsyncMsgCtrl && (ret = wpa_ctrl_pending(wpaAsyncMsgCtrl)) == 1) {
         size_t rxLen = rxBufLen;
-        ret = wpa_ctrl_recv(wpaAsyncMsgCtrl, rxBuf, &rxLen);
+        ret = wpa_ctrl_recv(wpaAsyncMsgCtrl, asyncRxBuf, &rxLen);
         if (ret) {
             disconnectWpa();
             return;
@@ -121,7 +125,7 @@ void WifiMonitor::asyncReadReady(QSocketDescriptor socket, QSocketNotifier::Type
 
         // Process the message
         if (rxLen < rxBufLen) {
-            rxBuf[rxLen] = 0;
+            asyncRxBuf[rxLen] = 0;
         }
         else {
             qWarning("WifiMonitor::asyncReadReady: Buffer truncated - packet too large");
@@ -129,7 +133,7 @@ void WifiMonitor::asyncReadReady(QSocketDescriptor socket, QSocketNotifier::Type
             return;
         }
 
-        QString msg(rxBuf);
+        QString msg(asyncRxBuf);
         msg = msg.trimmed();
         if (msg.length() > 0) {
             // Truncate prefix log level (we don't care about it, just the message)
@@ -146,7 +150,24 @@ void WifiMonitor::asyncReadReady(QSocketDescriptor socket, QSocketNotifier::Type
                     disconnectWpa();
                 }
             }
+
+            // Handle scanning state updates
+            else if (msg.startsWith("CTRL-EVENT-SCAN-STARTED")) {
+                // Set scan in progress flags to prevent multiple scan requests from being sent out
+                m_scanInProgress = true;
+            }
+            else if (msg.startsWith("CTRL-EVENT-SCAN-RESULTS")) {
+                // Scan no longer in progress
+                m_scanInProgress = false;
+
+                // Clear our copy of scan results state as the scan results have changed
+                m_scanResultsNeedsRedout = true;
+                m_scanResetReadout = true;
+
+                emit scanResultsChanged();
+            }
         }
+        ret = 0;
     }
     if (ret < 0) {
         disconnectWpa();
@@ -180,6 +201,8 @@ bool WifiMonitor::tryConnectWpa()
     if (!refreshNetworkList()) {
         goto error_network_rescan;
     }
+
+    m_scanResultsNeedsRedout = true;  // Scan results will need to be refreshed from wpa supplicant
 
     return true;
 
@@ -222,6 +245,13 @@ void WifiMonitor::disconnectWpa()
     if (needsNetworkIdEmit)
         emit networkIdChanged(m_networkId);
     emit networkListChanged();
+
+    m_scanInProgress = false;
+    m_scanResultsNeedsRedout = false;  // Disconnected so we don't need to readout (it'll always be empty)
+    bool needsScanResultsEmit = !m_scanResults.empty();
+    m_scanResults.clear();
+    if (needsScanResultsEmit)
+        emit scanResultsChanged();
 }
 
 bool WifiMonitor::xferRequest(const char* req, bool ignoreMsgOverflow) {
@@ -357,15 +387,30 @@ void WifiMonitor::removeNetworkInThread(int networkId) {
     issueSimpleRequest("SAVE_CONFIG");
 }
 
+void WifiMonitor::scanNetworks() {
+    emit doScanNetworks(QPrivateSignal());
+}
+
+void WifiMonitor::scanNetworksInThread() {
+    // No need to issue scan if we're already scanning
+    if (m_scanInProgress)
+        return;
+
+    m_scanInProgress = true;
+    if (!issueSimpleRequest("SCAN")) {
+        m_scanInProgress = false;
+    }
+}
+
 bool WifiMonitor::issueSimpleRequest(const QString &req) {
-    const char* reqCstr = req.toLatin1().data();
-    if (!xferRequest(reqCstr)) {
-        qWarning("Failed to send '%s'", reqCstr);
+    QByteArray reqEncoded = req.toLatin1();
+    if (!xferRequest(reqEncoded.constData())) {
+        qWarning("Failed to send '%s'", reqEncoded.constData());
         return false;
     }
 
     if (QString(rxBuf).trimmed() != "OK") {
-        qWarning("Failed to execute '%s': wpa_supplicant returned '%s'", reqCstr, rxBuf);
+        qWarning("Failed to execute '%s': wpa_supplicant returned '%s'", reqEncoded.constData(), rxBuf);
         return false;
     }
 
@@ -377,6 +422,7 @@ bool WifiMonitor::refreshNetworkList() {
 
     networkMap.clear();
 
+    // TODO: You can probably switch this over to get_network followed by an ID to enumerate all (allows you to get other fields like disabled or if a psk is set)
     if (!xferRequest("LIST_NETWORKS", true))
         return false;
 
@@ -386,10 +432,10 @@ bool WifiMonitor::refreshNetworkList() {
     start++;
 
     while (*start) {
-        bool last = false;
+//        bool last = false;
         end = strchr(start, '\n');
         if (end == NULL) {
-            last = true;
+//            last = true;
             end = start;
             while (end[0] && end[1])
                 end++;
@@ -410,12 +456,13 @@ bool WifiMonitor::refreshNetworkList() {
             break;
         *flags++ = '\0';
 
-        if (strstr(flags, "[DISABLED][P2P-PERSISTENT]")) {
-            if (last)
-                break;
-            start = end + 1;
-            continue;
-        }
+        // TODO: Do we want to hide disabled networks? (also this logic is incorrect for detecting disabled networks)
+//        if (strstr(flags, "[DISABLED][P2P-PERSISTENT]")) {
+//            if (last)
+//                break;
+//            start = end + 1;
+//            continue;
+//        }
 
         bool idConvOkay;
         int idVal = QString(id).toUInt(&idConvOkay);
@@ -441,6 +488,7 @@ bool WifiMonitor::refreshNetworkList() {
         start++;
     }
 
+    m_scanResultsNeedsRedout = true;  // Needs rescan as the network list changed causing known to be invalid
     emit networkListChanged();
 
     return true;
@@ -540,6 +588,138 @@ void WifiMonitor::pollTimerCallback()
         disconnectWpa();
         return;
     }
+}
+
+void WifiMonitor::refreshScanResultsInThread() {
+    // Don't need to run if readout isn't needed or a readout is already underway
+    if (!m_scanResultsNeedsRedout || m_scanReadoutInProgress)
+        return;
+
+    m_scanReadoutInProgress = true;
+
+    QMap<QString, WifiScanResult> ssidResultMap;
+
+    // Loop until we get a successful readout
+    do {
+        m_scanResetReadout = false;
+        ssidResultMap.clear();
+
+        int bss_idx = 0;
+        while (!m_scanResetReadout) {
+            QString req = QString("BSS %1").arg(bss_idx++);
+            if (!xferRequest(req.toLatin1().data())) {
+                // Most likely an overflow from too much scan data. Just drop this and try next one
+                continue;
+            }
+
+            // Retreive the scan data
+            QMap<QString, QString> bssEntry;
+            QMap<QString, QString>::const_iterator itr;
+            if (!decodePropertyString(rxBuf, &bssEntry)) {
+                // Reached end of scan results, exit
+                break;
+            }
+
+            // Decode SSID
+            itr = bssEntry.constFind("ssid");
+            if (itr == bssEntry.end()) {
+                // SSID is blank, don't include it
+                continue;
+            }
+            QString ssid = *itr;
+            if (ssid.size() == 0) {
+                // SSID is blank, don't include it
+                continue;
+            }
+
+            // Decode signal level
+            itr = bssEntry.constFind("level");
+            if (itr == bssEntry.end()) {
+                continue;
+            }
+            bool okay = false;
+            // TODO: Figure out the equation for this
+            int signalStrength = itr->toInt(&okay);
+            if (!okay) {
+                // Invalid level int
+                continue;
+            }
+            signalStrength = 2 * (100 + signalStrength);
+            if (signalStrength > 100)
+                signalStrength = 100;
+            else if (signalStrength < 0)
+                signalStrength = 0;
+
+            // Decode security flags
+            itr = bssEntry.constFind("flags");
+            if (itr == bssEntry.end()) {
+                continue;
+            }
+            bool encrypted = false;
+            // TODO: Actually decode this fully
+            if (itr->contains("[WPA2-") || itr->contains("[WPA-") || itr->contains("[WEP]")) {
+                encrypted = true;
+            }
+
+
+            // Add to list
+            auto existing = ssidResultMap.find(ssid);
+            if (existing != ssidResultMap.end()) {
+                // If we already have an entry for this SSID, set results to the strongest value
+                if (existing->signalStrength < signalStrength) {
+                    existing->signalStrength = signalStrength;
+                    existing->encrypted = encrypted;
+                }
+            }
+            else {
+
+                WifiScanResult result = {
+                    .ssid = ssid,
+                    .signalStrength = signalStrength,
+                    .encrypted = encrypted,
+                    .known = (networkMap.key(ssid, -1) != -1)
+                };
+                ssidResultMap.insert(ssid, result);
+            }
+        }
+
+        // Note that scan reset readout can be raised by the asynchronous wpa supplicant signals
+        // If the scan resets as we're reading it out, we'll need to restart from the beginning
+    } while(m_scanResetReadout);
+
+    QList<WifiScanResult> scanResultsLocal;
+    for (auto &itr : ssidResultMap) {
+        scanResultsLocal.push_back(itr);
+    }
+    std::sort(scanResultsLocal.begin(), scanResultsLocal.end(), [](const WifiScanResult &v1, const WifiScanResult &v2) {
+        if (v1.signalStrength == v2.signalStrength)
+            return v1.ssid > v2.ssid;  // Must have strict weak ordering, fall back to ssid if signal strengths equal
+        else
+            return v1.signalStrength > v2.signalStrength;
+    });
+
+    // Write results to shared variable
+    m_scanResultsMutex.lock();
+    m_scanResults = scanResultsLocal;
+    m_scanResultsNeedsRedout = false;
+    m_scanReadoutInProgress = false;
+    m_scanResultsMutex.unlock();
+    m_scanResultsReadyWait.notify_all();
+}
+
+QList<WifiScanResult> WifiMonitor::getScanResults() {
+    // Get results under lock
+    // This is primarily done so that we don't read out scan results unless there is a pending request for them
+    // This prevents cases where we waste CPU reading out scan results when nobody needs them
+    m_scanResultsMutex.lock();
+    while (m_scanResultsNeedsRedout) {
+        emit doRefreshScanResults(QPrivateSignal());
+        m_scanResultsReadyWait.wait(&m_scanResultsMutex);
+    }
+    QList<WifiScanResult> results = m_scanResults;
+    m_scanResultsMutex.unlock();
+
+    return results;
 }
 
 } // namespace WingletUI

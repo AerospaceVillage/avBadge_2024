@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# Starts battery led daemon
+# Starts led daemon
 #
 
-DAEMON="batt_led"
+DAEMON="leddaemon"
 PIDFILE="/var/run/$DAEMON.pid"
 
-BATTLED_ARGS=""
+LEDDAEMON_ARGS="--no-daemon"
 
 # shellcheck source=/dev/null
 [ -r "/etc/default/$DAEMON" ] && . "/etc/default/$DAEMON"
@@ -14,8 +14,8 @@ BATTLED_ARGS=""
 start() {
         printf 'Starting %s: ' "$DAEMON"
         # shellcheck disable=SC2086 # we need the word splitting
-        start-stop-daemon -S -b -q -m -p "$PIDFILE" -x "/usr/libexec/$DAEMON" \
-                -- $DUMP1090_ARGS
+        start-stop-daemon -S -b -q -m -p "$PIDFILE" -x "/usr/bin/$DAEMON" \
+                -- $LEDDAEMON_ARGS
         status=$?
         if [ "$status" -eq 0 ]; then
                 echo "OK"

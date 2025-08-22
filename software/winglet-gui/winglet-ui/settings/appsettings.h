@@ -5,6 +5,10 @@
 #include <QElapsedTimer>
 #include "abstractsettingsentry.h"
 
+#define USB_ROLE_HOST 1
+#define USB_ROLE_DEVICE 2
+#define USB_ROLE_AUTO 3
+
 namespace WingletUI {
 
 class GPSReading;
@@ -20,6 +24,7 @@ class GPSReading;
                 saveSettings(); \
             } \
         } \
+        Q_SIGNAL void name ## Changed(type newVal); \
     private: \
         type m_ ## name = defaultVal;
 
@@ -44,10 +49,25 @@ public:
     DEFINE_SETTING(int, adsbDecayTimeSec, 60, setAdsbDecayTimeSec)
     DEFINE_SETTING(bool, invertedScrollDirection, true, setInvertedScrollDirection)
     DEFINE_SETTING(bool, wifiStartDisabled, false, setWifiStartDisabled)
+    DEFINE_SETTING(int, ledBrightness,9, setLedBrightness)
+    DEFINE_SETTING(bool, battLedEnable, true, setBattLedEnable)
+    DEFINE_SETTING(bool, darkMode, true, setDarkMode)
+    DEFINE_SETTING(bool, timeFormat12hr, false, setTimeFormat12hr)
+    DEFINE_SETTING(bool, sdCardMaps, false, setSdCardMaps)
+    DEFINE_SETTING(int, usbRole, USB_ROLE_AUTO, setUsbRole)
+
+    // Keeps fast charge 3A setting in persistent location to survive reboots
+    DEFINE_SETTING(bool, fastCharge3APersistent, false, setFastCharge3APersistent)
 
     // Set default latitude/longitude to las vegas convention center
     DEFINE_SETTING(double, lastLatitude, 36.1345, setLastLatitude)
     DEFINE_SETTING(double, lastLongitude, -115.1580, setLastLongitude)
+
+    // Holds defaults for resuming canard control settings
+    DEFINE_SETTING(uint, canardLastFmFreq, 1017, setCanardLastFmFreq)
+    DEFINE_SETTING(uint, canardLastFmPreset, 1, setCanardLastFmPreset)
+    DEFINE_SETTING(uint, canardLastAirbandFreq, 121500, setCanardLastAirbandFreq)
+    DEFINE_SETTING(uint, canardLastAirbandPreset, 1, setCanardLastAirbandPreset)
 
 public:
     void reportGPSReading(GPSReading* reading);
@@ -58,21 +78,13 @@ public:
     enum AppSettingsAction {
         ACTION_ABOUT,
         ACTION_PRIVATE_DISCORD,
-        ACTION_JOIN_WIFI,
-        ACTION_MANAGE_WIFI_NETWORKS
+        ACTION_WIFI_SCAN,
+        ACTION_WIFI_MANUAL,
+        ACTION_MANAGE_WIFI_NETWORKS,
+        ACTION_CLEAR_ROOT_PASSWORD,
+        ACTION_RELEASE_NOTES,
+        ACTION_COLD_BOOT_GPS
     };
-
-signals:
-    void externalAntennaChanged(bool val);
-    void saoPowerEnChanged(bool val);
-    void saoI2CPullEnChanged(bool val);
-    void screenBrightnessChanged(int val);
-    void clockShowSecondsChanged(bool val);
-    void adsbDecayTimeSecChanged(int val);
-    void invertedScrollDirectionChanged(bool val);
-    void wifiStartDisabledChanged(bool val);
-    void lastLatitudeChanged(double val);
-    void lastLongitudeChanged(double val);
 
 private:
     QElapsedTimer gpsSaveTimer;

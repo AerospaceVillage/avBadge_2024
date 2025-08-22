@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QKeyEvent>
+#include <QCryptographicHash>
 #include <QSysInfo>
 #include <QMap>
 #include <QNetworkInterface>
@@ -37,7 +38,10 @@ InfoViewer::InfoViewer(QWidget *parent)
     int margin = 100;   // 240 / sqrt(2);
     layout->setContentsMargins(QMargins(margin, margin, margin, margin));
     layout->setSpacing(-40);
-    this->show();
+
+    // Add logo
+    avLogoLabel = new QLabel(this);
+    activeTheme->renderBgAvLogo(avLogoLabel);
 }
 
 void InfoViewer::keyPressEvent(QKeyEvent *event)
@@ -54,10 +58,20 @@ void InfoViewer::keyPressEvent(QKeyEvent *event)
         }
 }
 
+static char nibbleToHexChar(unsigned char nibble) {
+    if (nibble < 10)
+        return '0' + nibble;
+    else if (nibble < 16)
+        return 'a' + nibble - 10;
+    else
+        return '?';
+}
+
 void InfoViewer::buildInfoMap(){
     //Build out the key valu pairs to display
     infoMap.insert("OS Version", QSysInfo::prettyProductName());
     infoMap.insert("Kernel Version", QSysInfo::kernelVersion());
+    infoMap.insert("GUI Version", WINGLET_GUI_VERSION);
     infoMap.insert("Distro Base", QSysInfo::productType());
     infoMap.insert("Distro Version", QSysInfo::productVersion());
 
@@ -94,6 +108,18 @@ void InfoViewer::buildInfoMap(){
         f.close();
      }
 
+    f.setFileName("/proc/device-tree/chosen/u-boot,version");
+    if (f.open(QFile::ReadOnly | QFile::Text)) {
+        QTextStream in(&f);
+        QString uboot_version = in.readLine();
+        f.close();
+
+        if (uboot_version.endsWith('\0')) {
+            uboot_version = uboot_version.left(uboot_version.length() - 1);
+        }
+        infoMap.insert("UBoot Version", uboot_version);
+    }
+
 
     //Get the ipv4 addresses of the connected interfaces
     foreach(QNetworkInterface netInterface, QNetworkInterface::allInterfaces()){
@@ -108,6 +134,24 @@ void InfoViewer::buildInfoMap(){
                 break;
             }
         }
+    }
+
+    f.setFileName("/lib/firmware/dsp0.hex");
+    if (f.open(QFile::ReadOnly)) {
+        QCryptographicHash dspHash(QCryptographicHash::Sha1);
+        dspHash.addData(&f);
+        f.close();
+
+        QByteArray hashBytes = dspHash.result();
+        char hashStr[9];
+        for (size_t i = 0; i < sizeof(hashStr) - 1; i += 2) {
+            unsigned char hashByte = hashBytes.at(i >> 1);
+            hashStr[i] = nibbleToHexChar(hashByte >> 4);
+            hashStr[i+1] = nibbleToHexChar(hashByte & 0xF);
+        }
+        hashStr[sizeof(hashStr) - 1] = 0;
+
+        infoMap.insert("DSP Hash", hashStr);
     }
 }
 
