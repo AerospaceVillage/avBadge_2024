@@ -1,4 +1,8 @@
 ## GPS
+
+Explainer of the GPS Info screen on the badge
+[asvbadge2.0wingletsatellites.pdf](asvbadge2.0wingletsatellites.pdf)
+
 ### Lock
 - make sure you have a full charge and put your badge somewhere it's likely to get a lock
 - Run gpsmon to verify badge is receiving GPS signal
