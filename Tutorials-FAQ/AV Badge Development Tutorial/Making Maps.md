@@ -3,7 +3,6 @@
 So we use PBF files more info here https://wiki.openstreetmap.org/wiki/PBF_Format  
 The OSM PBF is the one we found to be the best 
 
-
 To Download the file you can go to https://planet.openstreetmap.org  
 If you want to view everything go  https://www.openstreetmap.org  
 If you want to only download a specific part go https://download.geofabrik.de  
@@ -15,25 +14,32 @@ using this command ```osmium extract -b min_lon,min_lat,max_lon,max_lat input.os
 Pre setup .osm.pfb files use  
 tilemaker https://github.com/systemed/tilemaker
 
-install steps https://github.com/systemed/tilemaker/blob/master/docs/INSTALL.md  
-install ***apt install Lua5.1*** in ubuntu then make  
+Follow the docker install steps at [https://github.com/systemed/tilemaker/blob/master/docs/INSTALL.md ](https://github.com/systemed/tilemaker/blob/master/docs/INSTALL.md#docker)
 
-to output the Files we need in z/y/x format pbf files  
-``` ./tilemaker ../path/to/.osm.pbf ../path/to/folder/ --store /tmp/store```  
-```./tilemaker --input input.osm.pbf --bbox min_lon,min_lat,max_lon,max_lat --output tiles/```  
+Convert the download vector file (.osm.pbf) into a split set of tiles in z/y/x format pbf files  
+```sh
+docker run -tiv ../path/to/folder:/data tilemaker --input /data/input.osm.pbf --output /data/maps
+docker run -tiv ../path/to/folder:/data tilemaker --input /data/input.osm.pbf --bbox min_lon,min_lat,max_lon,max_lat --output /data/maps/
+```  
 
 **Example**
 Download north-america-latest.osm.pbf form https://download.geofabrik.d  
 use **tilemaker**
+
+```sh
+docker run -tiv .:/data tilemaker --input /data/north-america-latest.osm.pbf --output /data/tiles/
 ```
-./tilemaker north-america-latest.osm.pbf  --output tiles/
-```
+
 recommend add ```--store /tmp ``` if large file  
 copy the content of the tiles/ folder into the SD card maps/ folder
 
 install into the SD card
 
-
+```sh
+$ rsync -ap ./maps /media/SDCARD/
+$ ls -lash /media/SDCARD/maps
+0  1  10  11  12  13  14  2  3  4  5  6  7  8  9  metadata.json
+```
 
 # Other info
 ## Other Format you might see mbtiles https://wiki.openstreetmap.org/wiki/MBTiles
