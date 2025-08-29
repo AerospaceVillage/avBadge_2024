@@ -33,6 +33,7 @@ But this badge doesn't just display aircraft, it's also an entire linux single-b
 
 ### Software releases
 - v1.1 - [https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1](https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1)
+- v2.0 - [https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v2.0](https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v2.0)
 
 ### Tutorials and FAQ
 - How to create a QT widget for the AV Badge - [https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/AV%20Badge%20Development%20Tutorial](https://github.com/AerospaceVillage/avBadge_2024/tree/main/Tutorials-FAQ/AV%20Badge%20Development%20Tutorial)
