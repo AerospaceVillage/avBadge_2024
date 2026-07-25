@@ -28,10 +28,10 @@ But this badge doesn't just display aircraft, it's also an entire linux single-b
 ### Links to cases:
 - Case with stand - [https://github.com/LoganSound/AerospaceBadge2024_AerodynamicCase](https://github.com/LoganSound/AerospaceBadge2024_AerodynamicCase)
 - Travel case - [https://www.printables.com/model/1046877-case-for-aerospace-village-badge-dc32](https://www.printables.com/model/1046877-case-for-aerospace-village-badge-dc32)
-- Bumper case - [https://cad.onshape.com/documents/afde437b5cff13e66e64d5b8/w/c67f180588a5d683aad517e6/e/278043b948701274f9d3ab34?renderMode=0&uiState=672fa746f270b81d2e00e4de](https://cad.onshape.com/documents/afde437b5cff13e66e64d5b8/w/c67f180588a5d683aad517e6/e/278043b948701274f9d3ab34?renderMode=0&uiState=672fa746f270b81d2e00e4de)
 - Bezel - [hardware/bezel.stl](hardware/bezel.stl)
 
 ### Software releases
+- v2.0 - https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v2.0-image
 - v1.1 - [https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1](https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v1.1)
 - v2.0 - [https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v2.0](https://github.com/AerospaceVillage/avBadge_2024/releases/tag/v2.0)
 
